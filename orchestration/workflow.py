@@ -2,7 +2,7 @@ from orchestration.state import ProjectState
 from agents.supervisor import SupervisorAgent
 from agents.architecture import ArchitectureAgent
 from llm.base import LLMProvider
-from typing import Optional
+from typing import Optional, Any
 
 def run_phase4_workflow(
     run_id: str, 
