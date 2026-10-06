@@ -18,7 +18,7 @@ class TestFoundation(unittest.TestCase):
             config = yaml.safe_load(f)
         self.assertIn("experiment_name", config)
         self.assertIn("configuration", config)
-        self.assertIn("llm_provider", config)
+        self.assertIn("models", config)
 
     def test_experiment_runner(self):
         config = {
