@@ -88,9 +88,7 @@ def run_phase7_workflow(
     testing_provider: LLMProvider,
     debugging_provider: LLMProvider,
     sandbox_config: Optional[dict] = None,
-    max_debug_iterations: int = 3,
-    use_failure_classifier: bool = False,
-    classifier_model_path: str = "ml/artifacts/model.joblib"
+    max_debug_iterations: int = 3
 ) -> ProjectState:
     
     state = run_phase6_workflow(
@@ -103,29 +101,6 @@ def run_phase7_workflow(
     from agents.debugging import DebuggingAgent
     from agents.testing import TestingAgent
     
-    classifier = None
-    if use_failure_classifier:
-        import os
-        from ml.classifier import FailureClassifier
-        if os.path.exists(classifier_model_path):
-            classifier = FailureClassifier()
-            classifier.load(classifier_model_path)
-    
-    debug_agent = DebuggingAgent(provider=debugging_provider)
-    test_agent = TestingAgent(provider=testing_provider, sandbox_config=sandbox_config)
-    
-    iterations = 0
-    while state.test_result.status != "PASSED" and iterations < max_debug_iterations:
-        # Run classifier if enabled and model loaded
-        if classifier and classifier.is_trained:
-            import dataclasses
-            result = classifier.predict_from_test_result(
-                state.test_result.stdout,
-                state.test_result.stderr,
-                state.test_result.command
-            )
-            state.failure_classification = dataclasses.asdict(result)
-        
         debug_result = debug_agent.run(state)
         
         if not debug_result.success:
