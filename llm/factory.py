@@ -11,11 +11,8 @@ def create_llm_provider(config: Dict[str, Any]) -> LLMProvider:
     elif provider_name == "groq":
         from .providers.groq_provider import GroqProvider
         return GroqProvider(model=model_name)
-    elif provider_name == "gemini":
-        from .providers.gemini_provider import GeminiProvider
-        return GeminiProvider(model=model_name)
-    elif provider_name in ("huggingface", "hf"):
-        from .providers.huggingface_provider import HuggingFaceProvider
-        return HuggingFaceProvider(model=model_name)
+    elif provider_name == "openrouter":
+        from .providers.openrouter_provider import OpenRouterProvider
+        return OpenRouterProvider(model=model_name)
     else:
         raise LLMConfigurationError(f"Unsupported LLM provider: {provider_name}")
