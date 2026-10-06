@@ -9,10 +9,12 @@ def sanitize_dict(d: Dict[str, Any]) -> Dict[str, Any]:
         return d
     
     sanitized = {}
-    sensitive_keys = {"api_key", "groq_api_key", "openrouter_api_key", "secret", "password", "token", "credential", "private_key"}
+    sensitive_keys = {"api_key", "groq_api_key", "openrouter_api_key", "secret", "password", "credential", "private_key"}
     
     for k, v in d.items():
-        if any(sk in k.lower() for sk in sensitive_keys):
+        k_lower = k.lower()
+        is_sensitive = any(sk in k_lower for sk in sensitive_keys) or (k_lower == "token")
+        if is_sensitive:
             sanitized[k] = "***REDACTED***"
         elif isinstance(v, dict):
             sanitized[k] = sanitize_dict(v)

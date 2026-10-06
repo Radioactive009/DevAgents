@@ -9,6 +9,17 @@ from orchestration.state import ProjectState
 from observability.telemetry import Telemetry
 from llm.base import MockLLMProvider, LLMResponse
 
+from llm.base import LLMProvider, LLMResponse
+
+class CustomMockProvider(LLMProvider):
+    def __init__(self, response_text: str):
+        self.response_text = response_text
+        self.name = "mock"
+        self.model = "mock-model"
+
+    def generate(self, prompt, **kwargs):
+        return LLMResponse(text=self.response_text, provider=self.name, model=self.model, total_tokens=10)
+
 class TestPhase11Integration(unittest.TestCase):
     def setUp(self):
         self.temp_dir = tempfile.TemporaryDirectory()
@@ -26,30 +37,12 @@ class TestPhase11Integration(unittest.TestCase):
 
     def test_observability_workflow_integration(self):
         # Mocks
-        supervisor_mock = MockLLMProvider(
-            responses=[LLMResponse(content='{"requirements": [{"id": "REQ-1", "description": "test"}], "project_name": "test"}', token_usage={"total_tokens": 10})],
-            name="mock", model="mock-model"
-        )
-        arch_mock = MockLLMProvider(
-            responses=[LLMResponse(content='{"components": [{"name": "comp1", "description": "test"}]}', token_usage={"total_tokens": 10})],
-            name="mock", model="mock-model"
-        )
-        coding_mock = MockLLMProvider(
-            responses=[LLMResponse(content='{"files": [{"path": "main.py", "content": "print(1)"}]}', token_usage={"total_tokens": 10})],
-            name="mock", model="mock-model"
-        )
-        testing_mock = MockLLMProvider(
-            responses=[LLMResponse(content='{"test_command": "echo test"}', token_usage={"total_tokens": 10})],
-            name="mock", model="mock-model"
-        )
-        debugging_mock = MockLLMProvider(
-            responses=[LLMResponse(content='{"files_to_modify": []}', token_usage={"total_tokens": 10})],
-            name="mock", model="mock-model"
-        )
-        verification_mock = MockLLMProvider(
-            responses=[LLMResponse(content='{"status": "VERIFIED"}', token_usage={"total_tokens": 10})],
-            name="mock", model="mock-model"
-        )
+        supervisor_mock = CustomMockProvider('{"requirements": [{"id": "REQ-1", "description": "test"}], "project_name": "test"}')
+        arch_mock = CustomMockProvider('{"components": [{"name": "comp1", "description": "test"}]}')
+        coding_mock = CustomMockProvider('{"files": [{"path": "main.py", "content": "print(1)"}]}')
+        testing_mock = CustomMockProvider('{"test_command": "echo test"}')
+        debugging_mock = CustomMockProvider('{"files_to_modify": []}')
+        verification_mock = CustomMockProvider('{"status": "VERIFIED"}')
 
         state = run_phase11_workflow(
             run_id=self.run_id,
