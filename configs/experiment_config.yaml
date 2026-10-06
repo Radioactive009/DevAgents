@@ -1,0 +1,13 @@
+experiment_name: "test_experiment"
+configuration: "SINGLE_AGENT_BASELINE"
+llm_provider: "mock"
+llm_model: "mock-model"
+temperature: 0.2
+max_tokens: 2000
+max_debug_iterations: 3
+enable_rag: false
+enable_ml: false
+enable_verification: false
+dataset_name: "dummy_dataset"
+random_seed: 42
+logging_level: "INFO"
