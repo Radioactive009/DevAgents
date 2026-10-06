@@ -8,6 +8,9 @@ from agents.base import Agent
 from agents.models import AgentResult
 from agents.schema import DebugPatch, DebugResult, GeneratedFile, parse_json_response
 from orchestration.state import ProjectState
+from rag.context import ContextBuilder
+from rag.schemas import MemoryRecord
+from datetime import datetime, timezone
 
 class DebuggingAgent(Agent):
     def __init__(self, provider, max_retries=2):
@@ -138,6 +141,7 @@ class DebuggingAgent(Agent):
             error_message="Exhausted retries."
         )
 
+
     def _build_prompt(self, state: ProjectState) -> str:
         req_json = ""
         arch_json = ""
@@ -152,15 +156,48 @@ class DebuggingAgent(Agent):
         test_json = json.dumps(dataclasses.asdict(state.test_result), indent=2)
         history_json = json.dumps(state.debugging_history, indent=2)
         
-        return (
-            f"Requirements:\n{req_json}\n\n"
-            f"Architecture:\n{arch_json}\n\n"
-            f"Current Project Files:\n{files_json}\n\n"
-            f"Current Test Result (FAILURE):\n{test_json}\n\n"
-            f"Debugging History:\n{history_json}\n\n"
-            f"Provide the exact DebugPatch JSON to fix the failure."
-        )
+        task_info = f"Requirements:
+{req_json}
 
+Architecture:
+{arch_json}
+
+Current Project Files:
+{files_json}"
+        
+        retriever = state.metadata.get('retriever')
+        memory = state.metadata.get('memory')
+        
+        rag_chunks = None
+        if retriever:
+            query = f"{state.test_result.command}
+{state.test_result.stdout}
+{state.test_result.stderr}"
+            chunks, latency = retriever.retrieve(query, top_k=3)
+            rag_chunks = chunks
+            state.rag_metadata['last_retrieval'] = {'query': query, 'latency': latency, 'chunks': [c['chunk_id'] for c in chunks]}
+            
+        memory_records = None
+        if memory:
+            query = f"{state.test_result.command}
+{state.test_result.stdout}
+{state.test_result.stderr}"
+            records, latency = memory.retrieve_relevant_memory(query, top_k=3)
+            memory_records = records
+            state.memory_metadata['last_retrieval'] = {'query': query, 'latency': latency, 'records': [r.memory_id for r in records]}
+            
+        context_builder = ContextBuilder()
+        safe_context = context_builder.build_context(
+            task_info=task_info,
+            test_result=dataclasses.asdict(state.test_result),
+            debug_history=state.debugging_history,
+            rag_chunks=rag_chunks,
+            memory_records=memory_records
+        )
+        
+        return safe_context + "
+
+Provide the exact DebugPatch JSON to fix the failure."
     def _validate_patch(self, patch: DebugPatch, state: ProjectState):
         valid_req_ids = set()
         if state.project_plan:
