@@ -1,7 +1,7 @@
 import unittest
 import os
 
-from llm.factory import LLMProviderFactory
+from llm.factory import create_llm_provider
 from orchestration.workflow import run_phase4_workflow
 
 @unittest.skipUnless(os.environ.get("RUN_LLM_INTEGRATION_TESTS", "").lower() == "true", "Live integration tests disabled")
@@ -15,7 +15,7 @@ class TestAgentsLive(unittest.TestCase):
         if not api_key:
             self.skipTest("GROQ_API_KEY not found in environment")
             
-        provider = LLMProviderFactory.create_provider(
+        provider = create_llm_provider_provider(
             "groq", 
             api_key=api_key, 
             default_model="llama3-70b-8192"

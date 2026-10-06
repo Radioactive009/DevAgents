@@ -17,11 +17,20 @@ def test_workflow_rag_and_memory_disabled():
     )
     assert state is not None
 
+from unittest.mock import patch
+
 def test_workflow_rag_and_memory_enabled():
     mock_provider = MockLLMProvider()
-    state = run_phase7_workflow(
-        run_id="test_run_mem",
-        user_requirement="Create a hello world app with rag",
+    with patch("rag.pipeline.Embedder") as mock_embedder_cls:
+        # Mock the instance returned by Embedder()
+        mock_embedder_instance = mock_embedder_cls.return_value
+        mock_embedder_instance.model_name = "mock"
+        mock_embedder_instance.embed_texts.side_effect = lambda texts: __import__('numpy').random.rand(len(texts), 384).astype('float32')
+        mock_embedder_instance.embed_query.side_effect = lambda query: __import__('numpy').random.rand(384).astype('float32')
+
+        state = run_phase7_workflow(
+            run_id="test_run_mem",
+            user_requirement="Create a hello world app with rag",
         supervisor_provider=mock_provider,
         architecture_provider=mock_provider,
         coding_provider=mock_provider,

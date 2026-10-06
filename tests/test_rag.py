@@ -23,6 +23,9 @@ class MockEmbedder(Embedder):
         
     def embed_texts(self, texts):
         return np.random.rand(len(texts), self.dimension).astype(np.float32)
+        
+    def embed_query(self, query):
+        return np.random.rand(self.dimension).astype(np.float32)
 
 def test_embedding_generation():
     embedder = MockEmbedder()
