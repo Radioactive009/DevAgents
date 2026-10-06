@@ -88,9 +88,34 @@ def run_phase7_workflow(
     testing_provider: LLMProvider,
     debugging_provider: LLMProvider,
     sandbox_config: Optional[dict] = None,
-    max_debug_iterations: int = 3
+    max_debug_iterations: int = 3,
+    use_rag: bool = False,
+    use_memory: bool = False
 ) -> ProjectState:
     
+
+    # Phase 8 RAG and Memory Initialization
+    from rag.schemas import RAGConfig
+    from rag.retriever import Retriever
+    from rag.memory import ProjectMemory
+    from rag.pipeline import RAGPipeline
+    
+    rag_config = RAGConfig(use_rag=use_rag, use_memory=use_memory)
+    
+    retriever = None
+    if use_rag:
+        pipeline = RAGPipeline(rag_config)
+        pipeline.vector_store.load()
+        retriever = Retriever(pipeline.embedder, pipeline.vector_store)
+        
+    memory = None
+    if use_memory:
+        memory = ProjectMemory(rag_config.memory_store_path)
+        
+    state.metadata['retriever'] = retriever
+    state.metadata['memory'] = memory
+    
+    # Run the workflow
     state = run_phase6_workflow(
         run_id, user_requirement, supervisor_provider, architecture_provider, coding_provider, testing_provider, sandbox_config
     )

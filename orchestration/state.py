@@ -14,4 +14,8 @@ class ProjectState:
     test_result: Optional[TestResult] = None
     debugging_history: List[Dict[str, Any]] = field(default_factory=list)
     metadata: Dict[str, Any] = field(default_factory=dict)
+    
+    # RAG & Memory
+    rag_metadata: Dict[str, Any] = field(default_factory=dict)
+    memory_metadata: Dict[str, Any] = field(default_factory=dict)
 
