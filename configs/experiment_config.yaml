@@ -1,9 +1,21 @@
 experiment_name: "test_experiment"
 configuration: "SINGLE_AGENT_BASELINE"
-llm_provider: "mock"
-llm_model: "mock-model"
-temperature: 0.2
-max_tokens: 2000
+models:
+  groq_model:
+    provider: "groq"
+    model: "qwen/qwen3.8-27b"
+    temperature: 0.2
+    max_tokens: 2000
+  openrouter_model_1:
+    provider: "openrouter"
+    model: "openrouter/free"
+    temperature: 0.2
+    max_tokens: 2000
+  openrouter_model_2:
+    provider: "openrouter"
+    model: "google/gemma-4-26b-a4b-it:free"
+    temperature: 0.2
+    max_tokens: 2000
 max_debug_iterations: 3
 enable_rag: false
 enable_ml: false
