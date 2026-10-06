@@ -6,6 +6,9 @@ from benchmarks.swebench_execution import SWEBenchExecutionLayer
 from llm.factory import create_llm_provider
 from orchestration.workflow import run_single_agent_workflow
 from execution.docker_sandbox import DockerSandbox
+from dotenv import load_dotenv
+
+load_dotenv()
 
 def run_task(task_id: str):
     print(f"\n========== RUNNING {task_id} ==========")
