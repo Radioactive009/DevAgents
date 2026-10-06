@@ -213,10 +213,10 @@ class ExperimentRunner:
                 output_tokens=0,
                 total_tokens=getattr(record, 'total_tokens', 0),
                 tool_calls=record.total_tool_calls,
-                test_calls=len(record.test_events),
+                test_calls=0, # Not tracked at run level
                 execution_time_seconds=end_t - start_t,
-                llm_latency_seconds=sum(e.duration_ms for e in record.agent_events) / 1000.0,
-                test_execution_seconds=sum(e.duration_ms for e in record.test_events) / 1000.0,
+                llm_latency_seconds=0.0, # Requires parsing logs
+                test_execution_seconds=0.0, # Requires parsing logs
                 human_intervention=False,
                 rag_enabled="RAG" in system,
                 rag_calls=record.total_rag_queries,

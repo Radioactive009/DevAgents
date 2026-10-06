@@ -1,6 +1,6 @@
 experiment:
   name: "DevAgents Multi-Agent Evaluation"
-  version: "v1.0.0"
+  version: "v1.0.1"
   research_question: "Does a structured multi-agent software-engineering workflow improve functional correctness and debugging performance compared with a single-agent LLM baseline?"
 
 benchmark:
@@ -17,7 +17,7 @@ systems:
 
 llm:
   provider: "openrouter"
-  model: "anthropic/claude-3-opus-20240229"
+  model: "google/gemma-4-31b-it:free"
   temperature: 0.2
   max_tokens: 4096
 
