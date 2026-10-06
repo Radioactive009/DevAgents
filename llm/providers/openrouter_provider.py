@@ -94,9 +94,9 @@ class OpenRouterProvider(LLMProvider):
                 response_body = response.read().decode('utf-8')
                 data = json.loads(response_body)
                 
-                text = data['choices'][0]['message']['content']
+                text = data['choices'][0]['message'].get('content') or ""
                 
-                usage = data.get('usage', {})
+                usage = data.get('usage') or {}
                 input_tokens = usage.get('prompt_tokens')
                 output_tokens = usage.get('completion_tokens')
                 total_tokens = usage.get('total_tokens')

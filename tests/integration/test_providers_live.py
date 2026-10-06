@@ -27,8 +27,6 @@ class TestLLMProvidersIntegration(unittest.TestCase):
             if response and len(response.text) > 0:
                 print("OPENROUTER/openrouter/free: PASS")
         except Exception as e:
-            import traceback
-            traceback.print_exc()
             err_type = type(e).__name__
             print(f"OPENROUTER/openrouter/free: FAIL - {err_type}")
             
