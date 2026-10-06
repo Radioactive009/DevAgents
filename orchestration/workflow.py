@@ -385,7 +385,8 @@ def run_single_agent_workflow(
     user_requirement: str,
     provider: LLMProvider,
     sandbox_config: Optional[dict] = None,
-    max_iterations: int = 3
+    max_iterations: int = 3,
+    sandbox_override: Any = None
 ) -> ProjectState:
     from observability.telemetry import Telemetry
     from observability.schema import AgentEvent, TestEvent, DebugEvent, ErrorEvent
