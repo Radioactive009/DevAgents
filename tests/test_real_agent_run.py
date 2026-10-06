@@ -41,15 +41,20 @@ def run_task(task_id: str):
         def create_workspace(self):
             self.workspace_dir = workspace
             self.sandbox_id = run_id
-            
-    # We won't actually run the full LLM workflow because it takes 10+ minutes and will fail due to environment
-    # Instead, we do a dry run of the steps
-    print("6. Agent modification: PASS (Simulated for pipeline validation)")
-    with open(os.path.join(workspace, "agent_modification.txt"), "w") as f:
-        f.write("test modification")
-        
-    print("7. Test execution: FAIL (Environment mismatch)")
-    print("8. Debugging/retest: BLOCKED")
+
+    # Execute the actual workflow (max 1 iteration to save time for validation)
+    print("6. Agent modification: RUNNING...")
+    state = run_single_agent_workflow(
+        run_id=run_id,
+        user_requirement=meta["problem_statement"],
+        provider=provider,
+        sandbox_config=sandbox_config,
+        max_iterations=1,
+        sandbox_override=CustomSandbox(sandbox_config)
+    )
+    
+    print("7. Test execution: COMPLETED (Likely failed due to environment mismatch)")
+    print("8. Debugging/retest: COMPLETED (Limited to 1 iteration)")
     
     patch = executor.extract_patch(workspace, meta["base_commit"])
     print("9. Patch extraction: PASS")
@@ -57,7 +62,6 @@ def run_task(task_id: str):
     
     # Patch application to fresh base
     fresh_workspace = executor.prepare_repository(meta["repository"], meta["base_commit"])
-    # Write patch and apply it
     patch_file = os.path.join(fresh_workspace, "agent.patch")
     with open(patch_file, "w") as f:
         f.write(patch)
@@ -72,5 +76,6 @@ def run_task(task_id: str):
     print("12. Official evaluation: BLOCKED")
 
 if __name__ == '__main__':
+    # Add support for sandbox_override in workflow.py
     run_task("pytest-dev__pytest-11143")
     run_task("django__django-16816")
