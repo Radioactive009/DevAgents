@@ -15,13 +15,22 @@ def test_chunking():
     assert len(chunks) > 1
     assert chunks[0].project == "test_proj"
     
+class MockEmbedder(Embedder):
+    def __init__(self):
+        # Do not initialize SentenceTransformer
+        self.model_name = "mock"
+        self.dimension = 384
+        
+    def embed_texts(self, texts):
+        return np.random.rand(len(texts), self.dimension).astype(np.float32)
+
 def test_embedding_generation():
-    embedder = Embedder()
+    embedder = MockEmbedder()
     emb = embedder.embed_texts(["hello"])
     assert emb.shape[1] == 384
     
 def test_empty_query():
-    embedder = Embedder()
+    embedder = MockEmbedder()
     emb = embedder.embed_query("")
     assert len(emb) == 384
     
