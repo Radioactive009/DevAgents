@@ -34,6 +34,7 @@ class RunRequest(BaseModel):
 
 # Global memory to store current runs
 active_runs = {}
+active_runs_state = {}
 
 def execute_run(run_id: str, request: RunRequest):
     try:
@@ -57,9 +58,11 @@ def execute_run(run_id: str, request: RunRequest):
             debugging_provider=debugging_provider,
             verification_provider=verification_provider,
             use_rag=request.use_rag,
-            use_memory=request.use_memory
+            use_memory=request.use_memory,
+            use_tools=request.use_tools
         )
         
+        active_runs_state[run_id] = state
         active_runs[run_id] = "COMPLETED"
     except Exception as e:
         print(f"Run failed: {e}")
