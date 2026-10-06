@@ -61,7 +61,7 @@ class TestFoundation(unittest.TestCase):
         ]
         
         self.assertEqual(task_success_rate(runs), 0.5)
-        self.assertEqual(test_pass_rate(runs), 15/20)
+        self.assertEqual(calculate_test_pass_rate(runs), 15/20)
 
 if __name__ == '__main__':
     unittest.main()
