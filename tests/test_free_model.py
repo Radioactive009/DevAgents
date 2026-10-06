@@ -6,7 +6,7 @@ from dotenv import load_dotenv
 load_dotenv()
 api_key = os.environ.get("OPENROUTER_API_KEY")
 
-model = "cohere/north-mini-code:free"
+model = "google/gemma-4-31b-it:free"
 print(f"\nTesting model: {model}")
 payload = {
     "model": model,
