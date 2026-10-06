@@ -2,6 +2,7 @@ from orchestration.state import ProjectState
 from agents.supervisor import SupervisorAgent
 from agents.architecture import ArchitectureAgent
 from llm.base import LLMProvider
+from typing import Optional
 
 def run_phase4_workflow(
     run_id: str, 
@@ -52,3 +53,28 @@ def run_phase5_workflow(
         
     return state
 
+def run_phase6_workflow(
+    run_id: str, 
+    user_requirement: str, 
+    supervisor_provider: LLMProvider, 
+    architecture_provider: LLMProvider,
+    coding_provider: LLMProvider,
+    testing_provider: LLMProvider,
+    sandbox_config: Optional[dict] = None
+) -> ProjectState:
+    
+    state = run_phase5_workflow(
+        run_id, user_requirement, supervisor_provider, architecture_provider, coding_provider
+    )
+    
+    if not state.generated_project:
+        return state
+        
+    from agents.testing import TestingAgent
+    testing = TestingAgent(provider=testing_provider, sandbox_config=sandbox_config)
+    testing_result = testing.run(state)
+    
+    if not testing_result.success:
+        state.metadata["testing_error"] = testing_result.error_message
+        
+    return state
