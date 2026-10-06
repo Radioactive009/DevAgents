@@ -126,15 +126,30 @@ class ExperimentRunner:
         run_id = f"{task.task_id}_{system}_{uuid.uuid4().hex[:8]}"
         print(f"Executing Run {run_id}...")
         
-        # We wrap in a global try-except to never crash the whole experiment runner
-        # unless it's a critical infrastructure issue, but even then we log it.
+        from benchmarks.swebench_adapter import SWEBenchAdapter
+        from benchmarks.swebench_execution import SWEBenchExecutionLayer
+        from benchmarks.swebench_evaluator import SWEBenchNativeEvaluator
+        from execution.docker_sandbox import DockerSandbox
+        
+        adapter = SWEBenchAdapter()
+        executor = SWEBenchExecutionLayer()
+        evaluator = SWEBenchNativeEvaluator()
+        
         try:
+            meta = adapter.get_task_metadata(task.task_id)
+            workspace = executor.prepare_repository(meta["repository"], meta["base_commit"])
+            
             sandbox_config = {
                 "docker_image": self.protocol.execution.docker_image,
                 "timeout_seconds": self.protocol.execution.timeout_seconds,
                 "allow_network_for_dependencies": "deps" in self.protocol.execution.network_policy
             }
             
+            class CustomSandbox(DockerSandbox):
+                def create_workspace(self):
+                    self.workspace_dir = workspace
+                    self.sandbox_id = run_id
+                    
             provider_config = {
                 "provider": self.protocol.llm.provider,
                 "model": self.protocol.llm.model
@@ -151,13 +166,13 @@ class ExperimentRunner:
                     user_requirement=task.task_description,
                     provider=provider,
                     sandbox_config=sandbox_config,
-                    max_iterations=self.protocol.execution.max_debug_iterations
+                    max_iterations=self.protocol.execution.max_debug_iterations,
+                    sandbox_override=CustomSandbox(sandbox_config)
                 )
             else:
                 use_rag = "RAG" in system
                 use_memory = "MEMORY" in system
                 
-                # Create duplicate providers for each role to match standard pipeline
                 state = run_phase11_workflow(
                     run_id=run_id,
                     user_requirement=task.task_description,
@@ -171,15 +186,20 @@ class ExperimentRunner:
                     use_memory=use_memory,
                     use_tools=False,
                     sandbox_config=sandbox_config,
-                    max_debug_iterations=self.protocol.execution.max_debug_iterations
+                    max_debug_iterations=self.protocol.execution.max_debug_iterations,
+                    sandbox_override=CustomSandbox(sandbox_config)
                 )
                 
             end_t = time.time()
             
-            # Fetch telemetry for this run to populate result schema
+            # Patch extraction
+            patch = executor.extract_patch(workspace, meta["base_commit"])
+            
+            # Independent Evaluation
+            eval_result = evaluator.evaluate(task.task_id, patch)
+            
             telemetry = Telemetry.get_instance()
             record = telemetry.runs.get(run_id)
-            
             if not record:
                 raise RuntimeError("Telemetry record not found for run.")
                 
@@ -187,11 +207,10 @@ class ExperimentRunner:
             bug_fix_success = False
             final_test_pass = False
             
-            if state.test_result:
-                final_test_pass = (state.test_result.status == "PASSED")
-                if state.test_result.tests_total:
-                    test_pass_rate = state.test_result.tests_passed / max(1, state.test_result.tests_total)
-                bug_fix_success = final_test_pass
+            if eval_result["status"] == "PASS":
+                final_test_pass = True
+                bug_fix_success = True
+                test_pass_rate = 1.0
                 
             error_type = None
             error_msg = None

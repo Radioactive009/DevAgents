@@ -248,7 +248,8 @@ def run_phase11_workflow(
     max_debug_iterations: int = 3,
     use_rag: bool = False,
     use_memory: bool = False,
-    use_tools: bool = True
+    use_tools: bool = True,
+    sandbox_override: Any = None
 ) -> ProjectState:
     from observability.telemetry import Telemetry
     from observability.schema import AgentEvent, TestEvent, DebugEvent, VerificationEvent, ErrorEvent
@@ -267,6 +268,9 @@ def run_phase11_workflow(
 
     try:
         state = ProjectState(run_id=run_id, user_requirement=user_requirement)
+        
+        if sandbox_override:
+            state.sandbox = sandbox_override
         
         # Phase 8 RAG and Memory Initialization (from phase 7)
         from rag.schemas import RAGConfig

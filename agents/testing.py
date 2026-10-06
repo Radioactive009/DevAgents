@@ -38,8 +38,12 @@ class TestingAgent(Agent):
 
         sandbox = None
         try:
-            sandbox = DockerSandbox(self.sandbox_config)
-            sandbox.create_workspace()
+            if hasattr(state, "sandbox") and state.sandbox:
+                sandbox = state.sandbox
+            else:
+                sandbox = DockerSandbox(self.sandbox_config)
+                sandbox.create_workspace()
+                state.sandbox = sandbox
             
             # 1. Write files safely
             for f in project.files:
