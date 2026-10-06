@@ -249,7 +249,8 @@ def run_phase11_workflow(
     use_rag: bool = False,
     use_memory: bool = False,
     use_tools: bool = True,
-    sandbox_override: Any = None
+    sandbox_override: Any = None,
+    state: Optional[ProjectState] = None
 ) -> ProjectState:
     from observability.telemetry import Telemetry
     from observability.schema import AgentEvent, TestEvent, DebugEvent, VerificationEvent, ErrorEvent
@@ -267,8 +268,12 @@ def run_phase11_workflow(
     telemetry.start_run(run_id, "task-" + run_id, config, getattr(supervisor_provider, "name", "unknown"), getattr(supervisor_provider, "model", "unknown"))
 
     try:
-        state = ProjectState(run_id=run_id, user_requirement=user_requirement)
-        
+        if state is None:
+            state = ProjectState(run_id=run_id, user_requirement=user_requirement)
+        else:
+            state.run_id = run_id
+            state.user_requirement = user_requirement
+            
         if sandbox_override:
             state.sandbox = sandbox_override
         
