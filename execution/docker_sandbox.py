@@ -21,6 +21,14 @@ def check_docker_available() -> bool:
     try:
         client = docker.from_env()
         client.ping()
+        
+        # Test if credential helper is missing by listing images, though pull is the real test.
+        # But if docker is not in PATH, we can't pull.
+        import shutil
+        if not shutil.which("docker"):
+            print("Docker CLI not in PATH, credential helper will fail.")
+            return False
+            
         return True
     except Exception:
         return False
@@ -106,7 +114,7 @@ class DockerSandbox(Sandbox):
                 
             except Exception as e: # Catch wait timeout wrapper (docker uses requests exceptions for timeout sometimes)
                 from requests.exceptions import ReadTimeout
-                if isinstance(e, ReadTimeout) or "timeout" in str(e).lower():
+                if isinstance(e, ReadTimeout) or "timeout" in str(e).lower() or "timed out" in str(e).lower():
                     self.container.stop(timeout=1)
                     return self._create_result(False, cmd_str, start_time, None, "", "Execution timed out", "TIMEOUT", timed_out=True)
                 raise
