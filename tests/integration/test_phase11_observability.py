@@ -64,6 +64,7 @@ class TestPhase11Integration(unittest.TestCase):
             
         event_types = [e["event_type"] for e in lines]
         self.assertIn("agent", event_types)
+        print(state.metadata)
         self.assertIn("test", event_types)
         self.assertIn("verification", event_types)
         self.assertIn("run_summary", event_types)
