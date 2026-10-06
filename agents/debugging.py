@@ -156,14 +156,7 @@ class DebuggingAgent(Agent):
         test_json = json.dumps(dataclasses.asdict(state.test_result), indent=2)
         history_json = json.dumps(state.debugging_history, indent=2)
         
-        task_info = f"Requirements:
-{req_json}
-
-Architecture:
-{arch_json}
-
-Current Project Files:
-{files_json}"
+        task_info = f"Requirements:\\n{req_json}\\n\\nArchitecture:\\n{arch_json}\\n\\nCurrent Project Files:\\n{files_json}"
         
         retriever = state.metadata.get('retriever')
         memory = state.metadata.get('memory')
