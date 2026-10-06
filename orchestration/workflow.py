@@ -379,3 +379,88 @@ def run_phase11_workflow(
         telemetry.end_run(run_id, False, "ERROR")
 
     return state
+
+def run_single_agent_workflow(
+    run_id: str,
+    user_requirement: str,
+    provider: LLMProvider,
+    sandbox_config: Optional[dict] = None,
+    max_iterations: int = 3
+) -> ProjectState:
+    from observability.telemetry import Telemetry
+    from observability.schema import AgentEvent, TestEvent, DebugEvent, ErrorEvent
+    import time
+    
+    telemetry = Telemetry.get_instance()
+    
+    config = {
+        "use_rag": False,
+        "use_memory": False,
+        "max_iterations": max_iterations,
+        "sandbox_config": sandbox_config,
+        "system": "SINGLE_AGENT_BASELINE"
+    }
+    telemetry.start_run(run_id, "task-" + run_id, config, getattr(provider, "name", "unknown"), getattr(provider, "model", "unknown"))
+
+    try:
+        state = ProjectState(run_id=run_id, user_requirement=user_requirement)
+        
+        # Single Agent initialization
+        from agents.single_agent_baseline import SingleAgentBaseline
+        agent = SingleAgentBaseline(provider=provider, max_retries=2)
+        
+        # 1. Generate code
+        start_t = time.time()
+        gen_res = agent.run(state)
+        telemetry.record_agent(AgentEvent(run_id=run_id, agent_name="SingleAgentBaseline", phase="coding", duration_ms=(time.time()-start_t)*1000, success=gen_res.success))
+        
+        if not gen_res.success:
+            state.metadata["coding_error"] = gen_res.error_message
+            telemetry.end_run(run_id, False, "CODING_FAILED")
+            return state
+
+        # 2. Test Execution & Debug Loop
+        from agents.testing import TestingAgent
+        # We reuse testing infrastructure but it's just deterministically executing tests. 
+        # It's not a reasoning agent.
+        test_executor = TestingAgent(provider=provider, sandbox_config=sandbox_config)
+        
+        start_t = time.time()
+        test_res = test_executor.run(state)
+        telemetry.record_test(TestEvent(
+            run_id=run_id, duration_ms=(time.time()-start_t)*1000, success=test_res.success,
+            exit_code=getattr(state.test_result, "exit_code", None),
+            test_pass_rate=(state.test_result.tests_passed / max(1, state.test_result.tests_total)) if state.test_result and state.test_result.tests_total else 0.0
+        ))
+        
+        iterations = 0
+        while state.test_result and state.test_result.status != "PASSED" and iterations < max_iterations:
+            start_d = time.time()
+            debug_res = agent.run(state)
+            telemetry.record_debug(DebugEvent(run_id=run_id, iteration=iterations+1, success=debug_res.success, duration_ms=(time.time()-start_d)*1000, agent_name="SingleAgentBaseline"))
+            
+            if not debug_res.success:
+                state.metadata["debugging_error"] = debug_res.error_message
+                break
+                
+            start_t = time.time()
+            test_res = test_executor.run(state)
+            iterations += 1
+            telemetry.record_test(TestEvent(
+                run_id=run_id, duration_ms=(time.time()-start_t)*1000, success=test_res.success,
+                exit_code=getattr(state.test_result, "exit_code", None),
+                test_pass_rate=(state.test_result.tests_passed / max(1, state.test_result.tests_total)) if state.test_result and state.test_result.tests_total else 0.0
+            ))
+            
+            if not test_res.success:
+                state.metadata["testing_error"] = test_res.error_message
+                break
+
+        final_status = "PASSED" if (state.test_result and state.test_result.status == "PASSED") else "FAILED"
+        telemetry.end_run(run_id, final_status == "PASSED", final_status)
+        
+    except Exception as e:
+        telemetry.record_error(ErrorEvent(run_id=run_id, component="workflow", phase="unknown", error_type="WORKFLOW_ERROR", message=str(e)))
+        telemetry.end_run(run_id, False, "ERROR")
+
+    return state

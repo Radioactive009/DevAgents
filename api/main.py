@@ -31,6 +31,7 @@ class RunRequest(BaseModel):
     use_tools: bool = True
     provider: str = "groq"
     model: str = "llama3-70b-8192"
+    system: str = "MULTI_AGENT"
 
 # Global memory to store current runs
 active_runs = {}
@@ -39,28 +40,38 @@ active_runs_state = {}
 def execute_run(run_id: str, request: RunRequest):
     try:
         # Create providers
-        supervisor_provider = create_llm_provider({"provider": request.provider, "model": request.model})
-        arch_provider = create_llm_provider({"provider": request.provider, "model": request.model})
-        coding_provider = create_llm_provider({"provider": request.provider, "model": request.model})
-        testing_provider = create_llm_provider({"provider": request.provider, "model": request.model})
-        debugging_provider = create_llm_provider({"provider": request.provider, "model": request.model})
-        verification_provider = create_llm_provider({"provider": request.provider, "model": request.model})
-
         req_text = request.task_description + "\n\nRequirements:\n" + "\n".join(request.requirements)
         
-        state = run_phase11_workflow(
-            run_id=run_id,
-            user_requirement=req_text,
-            supervisor_provider=supervisor_provider,
-            architecture_provider=arch_provider,
-            coding_provider=coding_provider,
-            testing_provider=testing_provider,
-            debugging_provider=debugging_provider,
-            verification_provider=verification_provider,
-            use_rag=request.use_rag,
-            use_memory=request.use_memory,
-            use_tools=request.use_tools
-        )
+        if request.system == "SINGLE_AGENT_BASELINE":
+            from orchestration.workflow import run_single_agent_workflow
+            provider = create_llm_provider({"provider": request.provider, "model": request.model})
+            state = run_single_agent_workflow(
+                run_id=run_id,
+                user_requirement=req_text,
+                provider=provider,
+                max_iterations=3
+            )
+        else:
+            supervisor_provider = create_llm_provider({"provider": request.provider, "model": request.model})
+            arch_provider = create_llm_provider({"provider": request.provider, "model": request.model})
+            coding_provider = create_llm_provider({"provider": request.provider, "model": request.model})
+            testing_provider = create_llm_provider({"provider": request.provider, "model": request.model})
+            debugging_provider = create_llm_provider({"provider": request.provider, "model": request.model})
+            verification_provider = create_llm_provider({"provider": request.provider, "model": request.model})
+            
+            state = run_phase11_workflow(
+                run_id=run_id,
+                user_requirement=req_text,
+                supervisor_provider=supervisor_provider,
+                architecture_provider=arch_provider,
+                coding_provider=coding_provider,
+                testing_provider=testing_provider,
+                debugging_provider=debugging_provider,
+                verification_provider=verification_provider,
+                use_rag=request.use_rag,
+                use_memory=request.use_memory,
+                use_tools=request.use_tools
+            )
         
         active_runs_state[run_id] = state
         active_runs[run_id] = "COMPLETED"
