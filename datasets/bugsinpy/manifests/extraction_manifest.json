@@ -1,0 +1,21 @@
+{
+  "total_bugs_discovered": 501,
+  "attempted_bugs": 3,
+  "successfully_executed_bugs": 0,
+  "valid_failure_samples": 0,
+  "setup_failures": 0,
+  "unsupported_bugs": 3,
+  "timeouts": 0,
+  "excluded_samples": 0,
+  "environment_status": {
+    "is_windows": true,
+    "has_wsl": true,
+    "wsl_has_bash": false,
+    "can_run_bugsinpy": false,
+    "blocker_reason": "WSL is installed but a functional bash environment was not found (e.g., only docker-desktop rootfs available)."
+  },
+  "timestamp": "2026-10-06T16:17:58.760829",
+  "exclusion_reasons": {
+    "Windows environment without functional WSL Bash": 3
+  }
+}

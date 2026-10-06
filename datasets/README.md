@@ -1,41 +1,60 @@
 # DevAgents ML Datasets
 
-This directory (or equivalent remote storage) contains datasets used for training the Phase 8 ML Failure Classifier.
+This directory contains the pipeline for building the Phase 8 ML Failure Classifier datasets, fundamentally backed by the real **BugsInPy** benchmark.
 
-## BugsInPy Derived Dataset
+## 1. Real Source Dataset
+The primary and only source of truth for test evaluation is the **BugsInPy** benchmark (https://github.com/soarsmu/BugsInPy). It contains reproducible defects from real-world Python projects (e.g. pandas, scikit-learn, black).
 
-The initial dataset is derived from a subset of [BugsInPy](https://github.com/soarsmu/BugsInPy), simulating realistic test failure scenarios in Python codebases (such as pandas, scipy, scikit-learn).
+## 2. Download and Discovery
+The `BugsInPy` repository is checked out locally at `<repo_root>/BugsInPy/`. 
+The extraction tool (`datasets/bugsinpy/extractor.py`) dynamically traverses `projects/<project_name>/bugs/<bug_id>/bug.info` to discover available bugs across all projects, parsing out metadata such as python_version, buggy_commit_id, and test_file.
 
-### Label Taxonomy
+## 3. Execution Pipeline (When Environment Permits)
+The extraction pipeline relies on the official BugsInPy framework scripts (which require a functional Linux bash environment):
+1. **Checkout**: `bugsinpy-checkout -p <project> -i <bug_id> -v 0` targets the buggy commit.
+2. **Execution**: `bugsinpy-test` triggers the framework testing wrapper.
+3. **Capture**: The process monitors stdout/stderr, exit codes, and durations.
+4. **Failure Output**: The raw text output from the test failure is extracted.
 
-The labels are aligned with the existing Phase 7 Debugging taxonomy:
-- SYNTAX_ERROR
-- IMPORT_ERROR
-- DEPENDENCY_ERROR
-- TYPE_ERROR
-- ATTRIBUTE_ERROR
-- NAME_ERROR
-- VALUE_ERROR
-- ASSERTION_FAILURE
-- RUNTIME_ERROR
-- TIMEOUT
-- UNKNOWN_ERROR
+## 4. Failure Labeling
+Labels are purely derived from the *observed execution failures* using deterministic logic, mapping the thrown Exception to the Phase 7 Debugging taxonomy (e.g. `AssertionError` → `ASSERTION_FAILURE`, `TypeError` → `TYPE_ERROR`). The underlying patch (`bug_patch.txt`) is deliberately ignored during labeling.
 
-### Preprocessing
-1. Extraction of `stdout`, `stderr`, and test execution `command`.
-2. Removal of absolute and relative file paths (to prevent model memorization/overfitting on project-specific structures).
-3. Removal of hexadecimal memory addresses (e.g., `0x7f8b9c...`).
-4. Removal of specific line numbers (e.g., `line 42`).
-5. Conversion to lowercase, retention of alphanumeric and basic punctuation (.,-_), and stripping extraneous whitespace.
+## 5. Exclusions and Environmental Blockers
+Bugs that fail to run due to missing dependencies, obsolete Python versions, or environmental incompatibilities (e.g., executing bash scripts natively on Windows without a functional WSL distribution) are excluded. 
+- **Setup Failures**: Dependencies failed.
+- **Unsupported Environment**: e.g., Windows OS missing functional WSL.
+*All exclusions are explicitly logged in the extraction manifest (`datasets/bugsinpy/manifests/extraction_manifest.json`).*
 
-### Labeling Methodology
-For this initial iteration, errors are labeled based on the explicit `Exception` string found in the traceback (e.g., `AssertionError` -> `ASSERTION_FAILURE`, `TypeError` -> `TYPE_ERROR`). Where the explicit class is not available or ambiguous, `RUNTIME_ERROR` or `UNKNOWN_ERROR` is utilized.
+## 6. Data Splitting Methodology
+Extracted valid failures undergo a **deterministic 80/20 train/test split** (random seed = 42).
 
-### Split Methodology
-- A deterministic Random Seed (default 42).
-- Test Size: 20%.
-- Stratified sampling is used when class populations permit.
+## 7. Bug-Level Leakage Prevention
+Splits are computed strictly at the *Bug ID* level. If a single bug yields multiple failure samples, they are guaranteed to share the same partition (Train *or* Test). There is zero bug overlap between training and testing.
 
-### Limitations
-- The synthetic/subset representation currently used for Phase 8 might not capture the full breadth of multi-file semantic logic errors (`LOGIC_ERROR`), which often manifest as standard `AssertionError`s without an explicit Python exception.
-- Highly imbalanced classes (e.g. `TIMEOUT`) will exhibit skewed precision/recall metrics.
+## 8. Synthetic Augmentation Policy
+If (and only if) the real training set is too small or heavily imbalanced, synthetic augmentation is allowed *strictly for the training pool*. 
+- Real data has `source = "BugsInPy"`.
+- Synthetic data has `source = "synthetic"`.
+
+## 9. Final Test Set Integrity
+The final evaluation test set contains **only real BugsInPy samples**. Synthetic examples are never leaked into the test set to inflate metrics.
+
+## 10. ML Model
+- **Features**: `TfidfVectorizer(max_features=5000, stop_words="english")`. Fitted exclusively on training data.
+- **Classifier**: `LogisticRegression(random_state=42, max_iter=1000)`.
+
+## 11. Evaluation Metrics
+Evaluations against the real test set include:
+- Accuracy, Confusion Matrix, and Sample Counts.
+- Macro and Weighted Precision/Recall/F1 metrics.
+- Per-class metrics mapping support vs. precision.
+
+## 12. Reproduction Commands
+Run the extractor (requires functional WSL bash if on Windows):
+```bash
+python -m datasets.bugsinpy.extractor
+```
+Run the training and evaluation:
+```bash
+python -m ml.train
+```
