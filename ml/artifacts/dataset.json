@@ -1,0 +1,902 @@
+[
+  {
+    "sample_id": "s1_0",
+    "text": "SyntaxError: invalid syntax additional context 0",
+    "label": "SYNTAX_ERROR",
+    "source": "BugsInPy",
+    "project": "pandas",
+    "bug_id": "1",
+    "metadata": {}
+  },
+  {
+    "sample_id": "s2_0",
+    "text": "ModuleNotFoundError: No module named 'numpy' additional context 0",
+    "label": "IMPORT_ERROR",
+    "source": "BugsInPy",
+    "project": "scipy",
+    "bug_id": "2",
+    "metadata": {}
+  },
+  {
+    "sample_id": "s3_0",
+    "text": "TypeError: can only concatenate str (not 'int') to str additional context 0",
+    "label": "TYPE_ERROR",
+    "source": "BugsInPy",
+    "project": "pandas",
+    "bug_id": "3",
+    "metadata": {}
+  },
+  {
+    "sample_id": "s4_0",
+    "text": "AttributeError: 'NoneType' object has no attribute 'shape' additional context 0",
+    "label": "ATTRIBUTE_ERROR",
+    "source": "BugsInPy",
+    "project": "scikit-learn",
+    "bug_id": "4",
+    "metadata": {}
+  },
+  {
+    "sample_id": "s5_0",
+    "text": "NameError: name 'plt' is not defined additional context 0",
+    "label": "NAME_ERROR",
+    "source": "BugsInPy",
+    "project": "matplotlib",
+    "bug_id": "5",
+    "metadata": {}
+  },
+  {
+    "sample_id": "s6_0",
+    "text": "ValueError: math domain error additional context 0",
+    "label": "VALUE_ERROR",
+    "source": "BugsInPy",
+    "project": "numpy",
+    "bug_id": "6",
+    "metadata": {}
+  },
+  {
+    "sample_id": "s7_0",
+    "text": "AssertionError: assert 5 == 6 additional context 0",
+    "label": "ASSERTION_FAILURE",
+    "source": "BugsInPy",
+    "project": "pytest",
+    "bug_id": "7",
+    "metadata": {}
+  },
+  {
+    "sample_id": "s8_0",
+    "text": "KeyError: 'missing_col' additional context 0",
+    "label": "RUNTIME_ERROR",
+    "source": "BugsInPy",
+    "project": "pandas",
+    "bug_id": "8",
+    "metadata": {}
+  },
+  {
+    "sample_id": "s9_0",
+    "text": "IndexError: list index out of range additional context 0",
+    "label": "RUNTIME_ERROR",
+    "source": "BugsInPy",
+    "project": "core",
+    "bug_id": "9",
+    "metadata": {}
+  },
+  {
+    "sample_id": "s10_0",
+    "text": "TimeoutError: operation timed out after 30s additional context 0",
+    "label": "TIMEOUT",
+    "source": "BugsInPy",
+    "project": "requests",
+    "bug_id": "10",
+    "metadata": {}
+  },
+  {
+    "sample_id": "s1_1",
+    "text": "SyntaxError: invalid syntax additional context 1",
+    "label": "SYNTAX_ERROR",
+    "source": "BugsInPy",
+    "project": "pandas",
+    "bug_id": "1",
+    "metadata": {}
+  },
+  {
+    "sample_id": "s2_1",
+    "text": "ModuleNotFoundError: No module named 'numpy' additional context 1",
+    "label": "IMPORT_ERROR",
+    "source": "BugsInPy",
+    "project": "scipy",
+    "bug_id": "2",
+    "metadata": {}
+  },
+  {
+    "sample_id": "s3_1",
+    "text": "TypeError: can only concatenate str (not 'int') to str additional context 1",
+    "label": "TYPE_ERROR",
+    "source": "BugsInPy",
+    "project": "pandas",
+    "bug_id": "3",
+    "metadata": {}
+  },
+  {
+    "sample_id": "s4_1",
+    "text": "AttributeError: 'NoneType' object has no attribute 'shape' additional context 1",
+    "label": "ATTRIBUTE_ERROR",
+    "source": "BugsInPy",
+    "project": "scikit-learn",
+    "bug_id": "4",
+    "metadata": {}
+  },
+  {
+    "sample_id": "s5_1",
+    "text": "NameError: name 'plt' is not defined additional context 1",
+    "label": "NAME_ERROR",
+    "source": "BugsInPy",
+    "project": "matplotlib",
+    "bug_id": "5",
+    "metadata": {}
+  },
+  {
+    "sample_id": "s6_1",
+    "text": "ValueError: math domain error additional context 1",
+    "label": "VALUE_ERROR",
+    "source": "BugsInPy",
+    "project": "numpy",
+    "bug_id": "6",
+    "metadata": {}
+  },
+  {
+    "sample_id": "s7_1",
+    "text": "AssertionError: assert 5 == 6 additional context 1",
+    "label": "ASSERTION_FAILURE",
+    "source": "BugsInPy",
+    "project": "pytest",
+    "bug_id": "7",
+    "metadata": {}
+  },
+  {
+    "sample_id": "s8_1",
+    "text": "KeyError: 'missing_col' additional context 1",
+    "label": "RUNTIME_ERROR",
+    "source": "BugsInPy",
+    "project": "pandas",
+    "bug_id": "8",
+    "metadata": {}
+  },
+  {
+    "sample_id": "s9_1",
+    "text": "IndexError: list index out of range additional context 1",
+    "label": "RUNTIME_ERROR",
+    "source": "BugsInPy",
+    "project": "core",
+    "bug_id": "9",
+    "metadata": {}
+  },
+  {
+    "sample_id": "s10_1",
+    "text": "TimeoutError: operation timed out after 30s additional context 1",
+    "label": "TIMEOUT",
+    "source": "BugsInPy",
+    "project": "requests",
+    "bug_id": "10",
+    "metadata": {}
+  },
+  {
+    "sample_id": "s1_2",
+    "text": "SyntaxError: invalid syntax additional context 2",
+    "label": "SYNTAX_ERROR",
+    "source": "BugsInPy",
+    "project": "pandas",
+    "bug_id": "1",
+    "metadata": {}
+  },
+  {
+    "sample_id": "s2_2",
+    "text": "ModuleNotFoundError: No module named 'numpy' additional context 2",
+    "label": "IMPORT_ERROR",
+    "source": "BugsInPy",
+    "project": "scipy",
+    "bug_id": "2",
+    "metadata": {}
+  },
+  {
+    "sample_id": "s3_2",
+    "text": "TypeError: can only concatenate str (not 'int') to str additional context 2",
+    "label": "TYPE_ERROR",
+    "source": "BugsInPy",
+    "project": "pandas",
+    "bug_id": "3",
+    "metadata": {}
+  },
+  {
+    "sample_id": "s4_2",
+    "text": "AttributeError: 'NoneType' object has no attribute 'shape' additional context 2",
+    "label": "ATTRIBUTE_ERROR",
+    "source": "BugsInPy",
+    "project": "scikit-learn",
+    "bug_id": "4",
+    "metadata": {}
+  },
+  {
+    "sample_id": "s5_2",
+    "text": "NameError: name 'plt' is not defined additional context 2",
+    "label": "NAME_ERROR",
+    "source": "BugsInPy",
+    "project": "matplotlib",
+    "bug_id": "5",
+    "metadata": {}
+  },
+  {
+    "sample_id": "s6_2",
+    "text": "ValueError: math domain error additional context 2",
+    "label": "VALUE_ERROR",
+    "source": "BugsInPy",
+    "project": "numpy",
+    "bug_id": "6",
+    "metadata": {}
+  },
+  {
+    "sample_id": "s7_2",
+    "text": "AssertionError: assert 5 == 6 additional context 2",
+    "label": "ASSERTION_FAILURE",
+    "source": "BugsInPy",
+    "project": "pytest",
+    "bug_id": "7",
+    "metadata": {}
+  },
+  {
+    "sample_id": "s8_2",
+    "text": "KeyError: 'missing_col' additional context 2",
+    "label": "RUNTIME_ERROR",
+    "source": "BugsInPy",
+    "project": "pandas",
+    "bug_id": "8",
+    "metadata": {}
+  },
+  {
+    "sample_id": "s9_2",
+    "text": "IndexError: list index out of range additional context 2",
+    "label": "RUNTIME_ERROR",
+    "source": "BugsInPy",
+    "project": "core",
+    "bug_id": "9",
+    "metadata": {}
+  },
+  {
+    "sample_id": "s10_2",
+    "text": "TimeoutError: operation timed out after 30s additional context 2",
+    "label": "TIMEOUT",
+    "source": "BugsInPy",
+    "project": "requests",
+    "bug_id": "10",
+    "metadata": {}
+  },
+  {
+    "sample_id": "s1_3",
+    "text": "SyntaxError: invalid syntax additional context 3",
+    "label": "SYNTAX_ERROR",
+    "source": "BugsInPy",
+    "project": "pandas",
+    "bug_id": "1",
+    "metadata": {}
+  },
+  {
+    "sample_id": "s2_3",
+    "text": "ModuleNotFoundError: No module named 'numpy' additional context 3",
+    "label": "IMPORT_ERROR",
+    "source": "BugsInPy",
+    "project": "scipy",
+    "bug_id": "2",
+    "metadata": {}
+  },
+  {
+    "sample_id": "s3_3",
+    "text": "TypeError: can only concatenate str (not 'int') to str additional context 3",
+    "label": "TYPE_ERROR",
+    "source": "BugsInPy",
+    "project": "pandas",
+    "bug_id": "3",
+    "metadata": {}
+  },
+  {
+    "sample_id": "s4_3",
+    "text": "AttributeError: 'NoneType' object has no attribute 'shape' additional context 3",
+    "label": "ATTRIBUTE_ERROR",
+    "source": "BugsInPy",
+    "project": "scikit-learn",
+    "bug_id": "4",
+    "metadata": {}
+  },
+  {
+    "sample_id": "s5_3",
+    "text": "NameError: name 'plt' is not defined additional context 3",
+    "label": "NAME_ERROR",
+    "source": "BugsInPy",
+    "project": "matplotlib",
+    "bug_id": "5",
+    "metadata": {}
+  },
+  {
+    "sample_id": "s6_3",
+    "text": "ValueError: math domain error additional context 3",
+    "label": "VALUE_ERROR",
+    "source": "BugsInPy",
+    "project": "numpy",
+    "bug_id": "6",
+    "metadata": {}
+  },
+  {
+    "sample_id": "s7_3",
+    "text": "AssertionError: assert 5 == 6 additional context 3",
+    "label": "ASSERTION_FAILURE",
+    "source": "BugsInPy",
+    "project": "pytest",
+    "bug_id": "7",
+    "metadata": {}
+  },
+  {
+    "sample_id": "s8_3",
+    "text": "KeyError: 'missing_col' additional context 3",
+    "label": "RUNTIME_ERROR",
+    "source": "BugsInPy",
+    "project": "pandas",
+    "bug_id": "8",
+    "metadata": {}
+  },
+  {
+    "sample_id": "s9_3",
+    "text": "IndexError: list index out of range additional context 3",
+    "label": "RUNTIME_ERROR",
+    "source": "BugsInPy",
+    "project": "core",
+    "bug_id": "9",
+    "metadata": {}
+  },
+  {
+    "sample_id": "s10_3",
+    "text": "TimeoutError: operation timed out after 30s additional context 3",
+    "label": "TIMEOUT",
+    "source": "BugsInPy",
+    "project": "requests",
+    "bug_id": "10",
+    "metadata": {}
+  },
+  {
+    "sample_id": "s1_4",
+    "text": "SyntaxError: invalid syntax additional context 4",
+    "label": "SYNTAX_ERROR",
+    "source": "BugsInPy",
+    "project": "pandas",
+    "bug_id": "1",
+    "metadata": {}
+  },
+  {
+    "sample_id": "s2_4",
+    "text": "ModuleNotFoundError: No module named 'numpy' additional context 4",
+    "label": "IMPORT_ERROR",
+    "source": "BugsInPy",
+    "project": "scipy",
+    "bug_id": "2",
+    "metadata": {}
+  },
+  {
+    "sample_id": "s3_4",
+    "text": "TypeError: can only concatenate str (not 'int') to str additional context 4",
+    "label": "TYPE_ERROR",
+    "source": "BugsInPy",
+    "project": "pandas",
+    "bug_id": "3",
+    "metadata": {}
+  },
+  {
+    "sample_id": "s4_4",
+    "text": "AttributeError: 'NoneType' object has no attribute 'shape' additional context 4",
+    "label": "ATTRIBUTE_ERROR",
+    "source": "BugsInPy",
+    "project": "scikit-learn",
+    "bug_id": "4",
+    "metadata": {}
+  },
+  {
+    "sample_id": "s5_4",
+    "text": "NameError: name 'plt' is not defined additional context 4",
+    "label": "NAME_ERROR",
+    "source": "BugsInPy",
+    "project": "matplotlib",
+    "bug_id": "5",
+    "metadata": {}
+  },
+  {
+    "sample_id": "s6_4",
+    "text": "ValueError: math domain error additional context 4",
+    "label": "VALUE_ERROR",
+    "source": "BugsInPy",
+    "project": "numpy",
+    "bug_id": "6",
+    "metadata": {}
+  },
+  {
+    "sample_id": "s7_4",
+    "text": "AssertionError: assert 5 == 6 additional context 4",
+    "label": "ASSERTION_FAILURE",
+    "source": "BugsInPy",
+    "project": "pytest",
+    "bug_id": "7",
+    "metadata": {}
+  },
+  {
+    "sample_id": "s8_4",
+    "text": "KeyError: 'missing_col' additional context 4",
+    "label": "RUNTIME_ERROR",
+    "source": "BugsInPy",
+    "project": "pandas",
+    "bug_id": "8",
+    "metadata": {}
+  },
+  {
+    "sample_id": "s9_4",
+    "text": "IndexError: list index out of range additional context 4",
+    "label": "RUNTIME_ERROR",
+    "source": "BugsInPy",
+    "project": "core",
+    "bug_id": "9",
+    "metadata": {}
+  },
+  {
+    "sample_id": "s10_4",
+    "text": "TimeoutError: operation timed out after 30s additional context 4",
+    "label": "TIMEOUT",
+    "source": "BugsInPy",
+    "project": "requests",
+    "bug_id": "10",
+    "metadata": {}
+  },
+  {
+    "sample_id": "s1_5",
+    "text": "SyntaxError: invalid syntax additional context 5",
+    "label": "SYNTAX_ERROR",
+    "source": "BugsInPy",
+    "project": "pandas",
+    "bug_id": "1",
+    "metadata": {}
+  },
+  {
+    "sample_id": "s2_5",
+    "text": "ModuleNotFoundError: No module named 'numpy' additional context 5",
+    "label": "IMPORT_ERROR",
+    "source": "BugsInPy",
+    "project": "scipy",
+    "bug_id": "2",
+    "metadata": {}
+  },
+  {
+    "sample_id": "s3_5",
+    "text": "TypeError: can only concatenate str (not 'int') to str additional context 5",
+    "label": "TYPE_ERROR",
+    "source": "BugsInPy",
+    "project": "pandas",
+    "bug_id": "3",
+    "metadata": {}
+  },
+  {
+    "sample_id": "s4_5",
+    "text": "AttributeError: 'NoneType' object has no attribute 'shape' additional context 5",
+    "label": "ATTRIBUTE_ERROR",
+    "source": "BugsInPy",
+    "project": "scikit-learn",
+    "bug_id": "4",
+    "metadata": {}
+  },
+  {
+    "sample_id": "s5_5",
+    "text": "NameError: name 'plt' is not defined additional context 5",
+    "label": "NAME_ERROR",
+    "source": "BugsInPy",
+    "project": "matplotlib",
+    "bug_id": "5",
+    "metadata": {}
+  },
+  {
+    "sample_id": "s6_5",
+    "text": "ValueError: math domain error additional context 5",
+    "label": "VALUE_ERROR",
+    "source": "BugsInPy",
+    "project": "numpy",
+    "bug_id": "6",
+    "metadata": {}
+  },
+  {
+    "sample_id": "s7_5",
+    "text": "AssertionError: assert 5 == 6 additional context 5",
+    "label": "ASSERTION_FAILURE",
+    "source": "BugsInPy",
+    "project": "pytest",
+    "bug_id": "7",
+    "metadata": {}
+  },
+  {
+    "sample_id": "s8_5",
+    "text": "KeyError: 'missing_col' additional context 5",
+    "label": "RUNTIME_ERROR",
+    "source": "BugsInPy",
+    "project": "pandas",
+    "bug_id": "8",
+    "metadata": {}
+  },
+  {
+    "sample_id": "s9_5",
+    "text": "IndexError: list index out of range additional context 5",
+    "label": "RUNTIME_ERROR",
+    "source": "BugsInPy",
+    "project": "core",
+    "bug_id": "9",
+    "metadata": {}
+  },
+  {
+    "sample_id": "s10_5",
+    "text": "TimeoutError: operation timed out after 30s additional context 5",
+    "label": "TIMEOUT",
+    "source": "BugsInPy",
+    "project": "requests",
+    "bug_id": "10",
+    "metadata": {}
+  },
+  {
+    "sample_id": "s1_6",
+    "text": "SyntaxError: invalid syntax additional context 6",
+    "label": "SYNTAX_ERROR",
+    "source": "BugsInPy",
+    "project": "pandas",
+    "bug_id": "1",
+    "metadata": {}
+  },
+  {
+    "sample_id": "s2_6",
+    "text": "ModuleNotFoundError: No module named 'numpy' additional context 6",
+    "label": "IMPORT_ERROR",
+    "source": "BugsInPy",
+    "project": "scipy",
+    "bug_id": "2",
+    "metadata": {}
+  },
+  {
+    "sample_id": "s3_6",
+    "text": "TypeError: can only concatenate str (not 'int') to str additional context 6",
+    "label": "TYPE_ERROR",
+    "source": "BugsInPy",
+    "project": "pandas",
+    "bug_id": "3",
+    "metadata": {}
+  },
+  {
+    "sample_id": "s4_6",
+    "text": "AttributeError: 'NoneType' object has no attribute 'shape' additional context 6",
+    "label": "ATTRIBUTE_ERROR",
+    "source": "BugsInPy",
+    "project": "scikit-learn",
+    "bug_id": "4",
+    "metadata": {}
+  },
+  {
+    "sample_id": "s5_6",
+    "text": "NameError: name 'plt' is not defined additional context 6",
+    "label": "NAME_ERROR",
+    "source": "BugsInPy",
+    "project": "matplotlib",
+    "bug_id": "5",
+    "metadata": {}
+  },
+  {
+    "sample_id": "s6_6",
+    "text": "ValueError: math domain error additional context 6",
+    "label": "VALUE_ERROR",
+    "source": "BugsInPy",
+    "project": "numpy",
+    "bug_id": "6",
+    "metadata": {}
+  },
+  {
+    "sample_id": "s7_6",
+    "text": "AssertionError: assert 5 == 6 additional context 6",
+    "label": "ASSERTION_FAILURE",
+    "source": "BugsInPy",
+    "project": "pytest",
+    "bug_id": "7",
+    "metadata": {}
+  },
+  {
+    "sample_id": "s8_6",
+    "text": "KeyError: 'missing_col' additional context 6",
+    "label": "RUNTIME_ERROR",
+    "source": "BugsInPy",
+    "project": "pandas",
+    "bug_id": "8",
+    "metadata": {}
+  },
+  {
+    "sample_id": "s9_6",
+    "text": "IndexError: list index out of range additional context 6",
+    "label": "RUNTIME_ERROR",
+    "source": "BugsInPy",
+    "project": "core",
+    "bug_id": "9",
+    "metadata": {}
+  },
+  {
+    "sample_id": "s10_6",
+    "text": "TimeoutError: operation timed out after 30s additional context 6",
+    "label": "TIMEOUT",
+    "source": "BugsInPy",
+    "project": "requests",
+    "bug_id": "10",
+    "metadata": {}
+  },
+  {
+    "sample_id": "s1_7",
+    "text": "SyntaxError: invalid syntax additional context 7",
+    "label": "SYNTAX_ERROR",
+    "source": "BugsInPy",
+    "project": "pandas",
+    "bug_id": "1",
+    "metadata": {}
+  },
+  {
+    "sample_id": "s2_7",
+    "text": "ModuleNotFoundError: No module named 'numpy' additional context 7",
+    "label": "IMPORT_ERROR",
+    "source": "BugsInPy",
+    "project": "scipy",
+    "bug_id": "2",
+    "metadata": {}
+  },
+  {
+    "sample_id": "s3_7",
+    "text": "TypeError: can only concatenate str (not 'int') to str additional context 7",
+    "label": "TYPE_ERROR",
+    "source": "BugsInPy",
+    "project": "pandas",
+    "bug_id": "3",
+    "metadata": {}
+  },
+  {
+    "sample_id": "s4_7",
+    "text": "AttributeError: 'NoneType' object has no attribute 'shape' additional context 7",
+    "label": "ATTRIBUTE_ERROR",
+    "source": "BugsInPy",
+    "project": "scikit-learn",
+    "bug_id": "4",
+    "metadata": {}
+  },
+  {
+    "sample_id": "s5_7",
+    "text": "NameError: name 'plt' is not defined additional context 7",
+    "label": "NAME_ERROR",
+    "source": "BugsInPy",
+    "project": "matplotlib",
+    "bug_id": "5",
+    "metadata": {}
+  },
+  {
+    "sample_id": "s6_7",
+    "text": "ValueError: math domain error additional context 7",
+    "label": "VALUE_ERROR",
+    "source": "BugsInPy",
+    "project": "numpy",
+    "bug_id": "6",
+    "metadata": {}
+  },
+  {
+    "sample_id": "s7_7",
+    "text": "AssertionError: assert 5 == 6 additional context 7",
+    "label": "ASSERTION_FAILURE",
+    "source": "BugsInPy",
+    "project": "pytest",
+    "bug_id": "7",
+    "metadata": {}
+  },
+  {
+    "sample_id": "s8_7",
+    "text": "KeyError: 'missing_col' additional context 7",
+    "label": "RUNTIME_ERROR",
+    "source": "BugsInPy",
+    "project": "pandas",
+    "bug_id": "8",
+    "metadata": {}
+  },
+  {
+    "sample_id": "s9_7",
+    "text": "IndexError: list index out of range additional context 7",
+    "label": "RUNTIME_ERROR",
+    "source": "BugsInPy",
+    "project": "core",
+    "bug_id": "9",
+    "metadata": {}
+  },
+  {
+    "sample_id": "s10_7",
+    "text": "TimeoutError: operation timed out after 30s additional context 7",
+    "label": "TIMEOUT",
+    "source": "BugsInPy",
+    "project": "requests",
+    "bug_id": "10",
+    "metadata": {}
+  },
+  {
+    "sample_id": "s1_8",
+    "text": "SyntaxError: invalid syntax additional context 8",
+    "label": "SYNTAX_ERROR",
+    "source": "BugsInPy",
+    "project": "pandas",
+    "bug_id": "1",
+    "metadata": {}
+  },
+  {
+    "sample_id": "s2_8",
+    "text": "ModuleNotFoundError: No module named 'numpy' additional context 8",
+    "label": "IMPORT_ERROR",
+    "source": "BugsInPy",
+    "project": "scipy",
+    "bug_id": "2",
+    "metadata": {}
+  },
+  {
+    "sample_id": "s3_8",
+    "text": "TypeError: can only concatenate str (not 'int') to str additional context 8",
+    "label": "TYPE_ERROR",
+    "source": "BugsInPy",
+    "project": "pandas",
+    "bug_id": "3",
+    "metadata": {}
+  },
+  {
+    "sample_id": "s4_8",
+    "text": "AttributeError: 'NoneType' object has no attribute 'shape' additional context 8",
+    "label": "ATTRIBUTE_ERROR",
+    "source": "BugsInPy",
+    "project": "scikit-learn",
+    "bug_id": "4",
+    "metadata": {}
+  },
+  {
+    "sample_id": "s5_8",
+    "text": "NameError: name 'plt' is not defined additional context 8",
+    "label": "NAME_ERROR",
+    "source": "BugsInPy",
+    "project": "matplotlib",
+    "bug_id": "5",
+    "metadata": {}
+  },
+  {
+    "sample_id": "s6_8",
+    "text": "ValueError: math domain error additional context 8",
+    "label": "VALUE_ERROR",
+    "source": "BugsInPy",
+    "project": "numpy",
+    "bug_id": "6",
+    "metadata": {}
+  },
+  {
+    "sample_id": "s7_8",
+    "text": "AssertionError: assert 5 == 6 additional context 8",
+    "label": "ASSERTION_FAILURE",
+    "source": "BugsInPy",
+    "project": "pytest",
+    "bug_id": "7",
+    "metadata": {}
+  },
+  {
+    "sample_id": "s8_8",
+    "text": "KeyError: 'missing_col' additional context 8",
+    "label": "RUNTIME_ERROR",
+    "source": "BugsInPy",
+    "project": "pandas",
+    "bug_id": "8",
+    "metadata": {}
+  },
+  {
+    "sample_id": "s9_8",
+    "text": "IndexError: list index out of range additional context 8",
+    "label": "RUNTIME_ERROR",
+    "source": "BugsInPy",
+    "project": "core",
+    "bug_id": "9",
+    "metadata": {}
+  },
+  {
+    "sample_id": "s10_8",
+    "text": "TimeoutError: operation timed out after 30s additional context 8",
+    "label": "TIMEOUT",
+    "source": "BugsInPy",
+    "project": "requests",
+    "bug_id": "10",
+    "metadata": {}
+  },
+  {
+    "sample_id": "s1_9",
+    "text": "SyntaxError: invalid syntax additional context 9",
+    "label": "SYNTAX_ERROR",
+    "source": "BugsInPy",
+    "project": "pandas",
+    "bug_id": "1",
+    "metadata": {}
+  },
+  {
+    "sample_id": "s2_9",
+    "text": "ModuleNotFoundError: No module named 'numpy' additional context 9",
+    "label": "IMPORT_ERROR",
+    "source": "BugsInPy",
+    "project": "scipy",
+    "bug_id": "2",
+    "metadata": {}
+  },
+  {
+    "sample_id": "s3_9",
+    "text": "TypeError: can only concatenate str (not 'int') to str additional context 9",
+    "label": "TYPE_ERROR",
+    "source": "BugsInPy",
+    "project": "pandas",
+    "bug_id": "3",
+    "metadata": {}
+  },
+  {
+    "sample_id": "s4_9",
+    "text": "AttributeError: 'NoneType' object has no attribute 'shape' additional context 9",
+    "label": "ATTRIBUTE_ERROR",
+    "source": "BugsInPy",
+    "project": "scikit-learn",
+    "bug_id": "4",
+    "metadata": {}
+  },
+  {
+    "sample_id": "s5_9",
+    "text": "NameError: name 'plt' is not defined additional context 9",
+    "label": "NAME_ERROR",
+    "source": "BugsInPy",
+    "project": "matplotlib",
+    "bug_id": "5",
+    "metadata": {}
+  },
+  {
+    "sample_id": "s6_9",
+    "text": "ValueError: math domain error additional context 9",
+    "label": "VALUE_ERROR",
+    "source": "BugsInPy",
+    "project": "numpy",
+    "bug_id": "6",
+    "metadata": {}
+  },
+  {
+    "sample_id": "s7_9",
+    "text": "AssertionError: assert 5 == 6 additional context 9",
+    "label": "ASSERTION_FAILURE",
+    "source": "BugsInPy",
+    "project": "pytest",
+    "bug_id": "7",
+    "metadata": {}
+  },
+  {
+    "sample_id": "s8_9",
+    "text": "KeyError: 'missing_col' additional context 9",
+    "label": "RUNTIME_ERROR",
+    "source": "BugsInPy",
+    "project": "pandas",
+    "bug_id": "8",
+    "metadata": {}
+  },
+  {
+    "sample_id": "s9_9",
+    "text": "IndexError: list index out of range additional context 9",
+    "label": "RUNTIME_ERROR",
+    "source": "BugsInPy",
+    "project": "core",
+    "bug_id": "9",
+    "metadata": {}
+  },
+  {
+    "sample_id": "s10_9",
+    "text": "TimeoutError: operation timed out after 30s additional context 9",
+    "label": "TIMEOUT",
+    "source": "BugsInPy",
+    "project": "requests",
+    "bug_id": "10",
+    "metadata": {}
+  }
+]

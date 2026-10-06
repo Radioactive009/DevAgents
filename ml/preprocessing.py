@@ -8,8 +8,8 @@ def clean_text(text: str) -> str:
     text = text.lower()
     
     # Remove file paths (often project specific and cause overfitting)
-    text = re.sub(r'(?:/[^/\n]+)+', ' ', text)
-    text = re.sub(r'(?:\\[^\\[\n]+)+', ' ', text)
+    text = re.sub(r'/[^\s\n]+', ' ', text)
+    text = re.sub(r'\\[^\s\n]+', ' ', text)
     
     # Remove hex addresses
     text = re.sub(r'0x[a-f0-9]+', ' ', text)
