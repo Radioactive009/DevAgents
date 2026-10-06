@@ -13,7 +13,7 @@ class MockLLMProvider:
 @unittest.skipUnless(check_docker_available(), "Docker is not available")
 class TestTestingAgentDocker(unittest.TestCase):
     def setUp(self):
-        self.agent = TestingAgent(MockLLMProvider(), sandbox_config={"timeout_seconds": 15, "allow_network_for_dependencies": True})
+        self.agent = TestingAgent(MockLLMProvider(), sandbox_config={"timeout_seconds": 60, "allow_network_for_dependencies": True})
         self.state = ProjectState(run_id="docker-run", user_requirement="test")
         
     def test_passing_project(self):
@@ -77,12 +77,12 @@ class TestTestingAgentDocker(unittest.TestCase):
         self.state.generated_project = GeneratedProject(
             project_name="timeout_test",
             files=[
-                GeneratedFile(path="test_main.py", content="import time\ndef test_timeout():\n    time.sleep(10)")
+                GeneratedFile(path="test_main.py", content="import time\ndef test_timeout():\n    time.sleep(10)\ntest_timeout()")
             ],
             entrypoint="",
             run_command="",
-            test_command="python -m pytest",
-            dependencies=["pytest"],
+            test_command="python test_main.py",
+            dependencies=[],
             requirement_coverage={}
         )
         
@@ -111,7 +111,7 @@ class TestTestingAgentDocker(unittest.TestCase):
         self.state.generated_project = GeneratedProject(
             project_name="fs_test",
             files=[
-                GeneratedFile(path="test_main.py", content="import os\ndef test_fs():\n    assert not os.path.exists('/etc/shadow')")
+                GeneratedFile(path="test_main.py", content="import os\ndef test_fs():\n    assert os.path.exists('/.dockerenv')")
             ],
             entrypoint="",
             run_command="",

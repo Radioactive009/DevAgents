@@ -54,7 +54,7 @@ class TestingAgent(Agent):
                 original_network = sandbox.network_enabled
                 sandbox.network_enabled = allow_network
                 
-                req_cmd = ["python", "-m", "pip", "install"]
+                req_cmd = ["python", "-m", "pip", "install", "--target", "/app/.deps"]
                 if "requirements.txt" in [f.path for f in project.files]:
                     req_cmd.extend(["-r", "requirements.txt"])
                 else:
@@ -88,7 +88,24 @@ class TestingAgent(Agent):
                     )
 
             # 3. Run tests
-            test_cmd = shlex.split(project.test_command)
+            test_cmd_raw = project.test_command
+            test_cmd = shlex.split(test_cmd_raw)
+            if project.dependencies or "requirements.txt" in [f.path for f in project.files]:
+                # If we installed deps to /app/.deps, we need to add it to PYTHONPATH
+                sandbox.network_enabled = False # disable network during test execution for isolation
+                
+                # To ensure PYTHONPATH is evaluated in the container, we might need to wrap in a shell
+                # But DockerSandbox just passes command array directly.
+                # Let's prepend PYTHONPATH to the python execution if possible, or just rely on DockerSandbox environment
+                # Actually, DockerSandbox doesn't let us pass environment variables right now!
+                # Wait, we can run python -c "import sys, subprocess; sys.path.insert(0, '/app/.deps'); subprocess.run(...)"
+                # A simpler way: we modify execution/docker_sandbox.py to accept environment variables?
+                # For now, let's inject it into the command if it's a python command.
+                if test_cmd[0] == "python":
+                    test_cmd = ["env", "PYTHONPATH=/app/.deps"] + test_cmd
+                else:
+                    test_cmd = ["env", "PYTHONPATH=/app/.deps"] + test_cmd
+                    
             run_res = sandbox.run_tests(test_cmd)
             
             # 4. Parse results
