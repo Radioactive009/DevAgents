@@ -152,11 +152,16 @@ class DebuggingAgent(Agent):
         test_json = json.dumps(dataclasses.asdict(state.test_result), indent=2)
         history_json = json.dumps(state.debugging_history, indent=2)
         
+        ml_prediction = ""
+        if state.failure_classification:
+            ml_prediction = f"ML Failure Classification Prediction:\n{json.dumps(state.failure_classification, indent=2)}\n\n(Treat this as supporting evidence only)"
+        
         return (
             f"Requirements:\n{req_json}\n\n"
             f"Architecture:\n{arch_json}\n\n"
             f"Current Project Files:\n{files_json}\n\n"
             f"Current Test Result (FAILURE):\n{test_json}\n\n"
+            f"{ml_prediction}\n\n"
             f"Debugging History:\n{history_json}\n\n"
             f"Provide the exact DebugPatch JSON to fix the failure."
         )
