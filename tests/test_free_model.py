@@ -10,14 +10,11 @@ req = urllib.request.Request("https://openrouter.ai/api/v1/models")
 data = json.loads(urllib.request.urlopen(req).read().decode('utf-8'))
 free_models = [m['id'] for m in data['data'] if m['pricing']['prompt'] == '0' and m['pricing']['completion'] == '0']
 
-good_models = []
+print("All free models:")
 for m in free_models:
-    if "llama" in m.lower() or "gemini" in m.lower() or "qwen" in m.lower() or "mistral" in m.lower() or "phi" in m.lower():
-        good_models.append(m)
-        
-print("Found good free models:", good_models)
+    print(m)
 
-for model in good_models[:5]:
+for model in free_models[:3]:
     print(f"\nTesting model: {model}")
     payload = {
         "model": model,
