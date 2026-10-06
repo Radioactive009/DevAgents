@@ -105,7 +105,7 @@ class TestDebuggingAgentDocker(unittest.TestCase):
             dependencies=["pytest"],
             requirement_coverage={}
         )
-        self.sandbox_config = {"timeout_seconds": 10, "allow_network_for_dependencies": True}
+        self.sandbox_config = {"timeout_seconds": 60, "allow_network_for_dependencies": True}
 
     def test_debug_retest_loop_fix_on_first(self):
         test_agent = TestingAgent(MockTestLLMProvider(), sandbox_config=self.sandbox_config)

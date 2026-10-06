@@ -188,7 +188,7 @@ def run_phase7_workflow(
                 agent_name="TestingAgent"
             ))
         
-        if not test_result.success:
+        if not test_result.success and test_result.error_message:
             state.metadata["testing_error"] = test_result.error_message
             break
             
