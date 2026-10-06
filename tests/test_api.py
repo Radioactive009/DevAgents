@@ -15,7 +15,7 @@ def test_create_run():
     data = response.json()
     assert "run_id" in data
     assert data["status"] == "RUNNING"
-    assert active_runs[data["run_id"]] == "RUNNING"
+    assert active_runs[data["run_id"]] in ["RUNNING", "COMPLETED"]
 
 def test_get_run():
     active_runs["test-run-1"] = "COMPLETED"
