@@ -7,6 +7,7 @@ import json
 import uuid
 import asyncio
 from datetime import datetime
+import threading
 
 from orchestration.workflow import run_phase11_workflow
 from llm.factory import create_llm_provider
@@ -36,21 +37,37 @@ class RunRequest(BaseModel):
 # Global memory to store current runs
 active_runs = {}
 active_runs_state = {}
+state_lock = threading.Lock()
 
 def execute_run(run_id: str, request: RunRequest):
     try:
         # Create providers
         req_text = request.task_description + "\n\nRequirements:\n" + "\n".join(request.requirements)
         
+        state_lock.acquire()
+        try:
+            if run_id not in active_runs_state:
+                active_runs_state[run_id] = ProjectState(run_id=run_id, user_requirement=req_text)
+            state = active_runs_state[run_id]
+        finally:
+            state_lock.release()
+            
         if request.system == "SINGLE_AGENT_BASELINE":
             from orchestration.workflow import run_single_agent_workflow
             provider = create_llm_provider({"provider": request.provider, "model": request.model})
-            state = run_single_agent_workflow(
+            # SINGLE_AGENT_BASELINE does not take `state` yet, so it won't be live for MVP Phase 2 unless requested. MVP focuses on Multi-Agent.
+            # We'll just run it normally and it'll overwrite.
+            final_state = run_single_agent_workflow(
                 run_id=run_id,
                 user_requirement=req_text,
                 provider=provider,
                 max_iterations=3
             )
+            state_lock.acquire()
+            try:
+                active_runs_state[run_id] = final_state
+            finally:
+                state_lock.release()
         else:
             supervisor_provider = create_llm_provider({"provider": request.provider, "model": request.model})
             arch_provider = create_llm_provider({"provider": request.provider, "model": request.model})
@@ -59,7 +76,7 @@ def execute_run(run_id: str, request: RunRequest):
             debugging_provider = create_llm_provider({"provider": request.provider, "model": request.model})
             verification_provider = create_llm_provider({"provider": request.provider, "model": request.model})
             
-            state = run_phase11_workflow(
+            run_phase11_workflow(
                 run_id=run_id,
                 user_requirement=req_text,
                 supervisor_provider=supervisor_provider,
@@ -70,10 +87,10 @@ def execute_run(run_id: str, request: RunRequest):
                 verification_provider=verification_provider,
                 use_rag=request.use_rag,
                 use_memory=request.use_memory,
-                use_tools=request.use_tools
+                use_tools=request.use_tools,
+                state=state
             )
         
-        active_runs_state[run_id] = state
         active_runs[run_id] = "COMPLETED"
     except Exception as e:
         print(f"Run failed: {e}")
@@ -157,10 +174,16 @@ async def list_runs():
 
 @app.get("/api/runs/{run_id}/project")
 async def get_run_project(run_id: str):
-    state = active_runs_state.get(run_id)
-    if not state or not state.generated_project:
-        return {"files": {}}
-    return {"files": state.generated_project.files}
+    state_lock.acquire()
+    try:
+        state = active_runs_state.get(run_id)
+        if not state or not state.generated_project:
+            return {"files": {}}
+        # Create a deep copy of the files list to avoid iteration over mutated list
+        files_copy = {f.path: f.content for f in state.generated_project.files}
+        return {"files": files_copy}
+    finally:
+        state_lock.release()
 
 if __name__ == "__main__":
     import uvicorn

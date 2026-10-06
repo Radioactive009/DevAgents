@@ -3,7 +3,7 @@ import os
 import yaml
 import json
 from llm.base import MockLLMProvider
-from experiments.runner import ExperimentRunner, ExperimentLogger
+from experiments.runner import ExperimentRunner
 from evaluation.metrics import task_success_rate, calculate_test_pass_rate
 
 class TestFoundation(unittest.TestCase):

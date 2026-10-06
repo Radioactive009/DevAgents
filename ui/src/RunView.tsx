@@ -36,10 +36,12 @@ export default function RunView() {
   const pipeline = ["supervisor", "architecture", "coding", "testing", "debugging", "verification"];
   
   const getAgentStatus = (agentName: string) => {
-    const starts = events.filter(e => e.event_type === 'agent' && e.agent_name?.toLowerCase() === agentName && e.action === 'started');
-    const ends = events.filter(e => e.event_type === 'agent' && e.agent_name?.toLowerCase() === agentName && e.action === 'completed');
-    if (ends.length > 0) return { status: 'COMPLETED', duration: ends[0].duration_s };
-    if (starts.length > 0) return { status: 'RUNNING', duration: null };
+    const agentEvents = events.filter(e => e.event_type === 'agent' && e.agent_name?.toLowerCase() === agentName);
+    if (agentEvents.length === 0) return { status: 'WAITING', duration: null };
+    const latestEvent = agentEvents[agentEvents.length - 1];
+    if (latestEvent.action === 'started') return { status: 'RUNNING', duration: null };
+    if (latestEvent.action === 'completed') return { status: 'COMPLETED', duration: latestEvent.duration_s };
+    if (latestEvent.action === 'failed' || latestEvent.action === 'error') return { status: 'FAILED', duration: null };
     return { status: 'WAITING', duration: null };
   };
 
