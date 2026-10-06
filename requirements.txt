@@ -5,3 +5,5 @@ huggingface_hub
 python-dotenv
 docker
 pytest
+sentence-transformers
+faiss-cpu
