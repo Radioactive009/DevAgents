@@ -99,8 +99,11 @@ def run_phase7_workflow(
         return state
         
     from agents.debugging import DebuggingAgent
-    from agents.testing import TestingAgent
+    debug_agent = DebuggingAgent(provider=debugging_provider)
+    test_agent = TestingAgent(provider=testing_provider, sandbox_config=sandbox_config)
     
+    iterations = 0
+    while state.test_result.status != "PASSED" and iterations < max_debug_iterations:
         debug_result = debug_agent.run(state)
         
         if not debug_result.success:
