@@ -16,7 +16,7 @@ def test_minimal():
     
     try:
         response = client.chat.completions.create(
-            model="llama3-8b-8192",
+            model="qwen/qwen3.8-27b",
             messages=[
                 {"role": "user", "content": "Reply with exactly: GROQ SDK WORKS"}
             ],

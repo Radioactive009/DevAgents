@@ -6,8 +6,12 @@ from ..models import LLMResponse
 from ..errors import LLMAuthenticationError, LLMAPIError
 
 class GeminiProvider(LLMProvider):
-    def __init__(self, model: str):
-        self.model = model
+    def __init__(self, model: Optional[str] = None):
+        self.model = model or os.environ.get("GEMINI_MODEL", "gemini-2.5-flash")
+        # Fallback if somehow mock-model gets passed in explicitly
+        if self.model == "mock-model":
+            self.model = os.environ.get("GEMINI_MODEL", "gemini-2.5-flash")
+            
         api_key = os.environ.get("GEMINI_API_KEY")
         if not api_key:
             raise LLMAuthenticationError("GEMINI_API_KEY environment variable is not set")

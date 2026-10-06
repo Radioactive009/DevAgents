@@ -18,6 +18,9 @@ def classify_error(e: Exception) -> str:
         return "PROVIDER_ERROR"
 
 def test_groq_direct():
+    # Use explicit override
+    load_dotenv(override=True)
+    
     api_key = os.environ.get("GROQ_API_KEY")
     if not api_key:
         print("GROQ DIRECT: FAIL - MISSING_API_KEY")
@@ -28,7 +31,7 @@ def test_groq_direct():
         client = groq.Groq(api_key=api_key)
         
         response = client.chat.completions.create(
-            model="llama3-8b-8192",
+            model="qwen/qwen3.8-27b",
             messages=[
                 {"role": "user", "content": "Reply with exactly: OK"}
             ],

@@ -42,7 +42,11 @@ def test_auth():
             status_code = response.getcode()
             body = response.read().decode('utf-8')
             print(f"Status Code: {status_code}")
-            print(f"Response Body: {body[:200]}...") 
+            import json
+            models = json.loads(body).get("data", [])
+            print("Models available:")
+            for m in models:
+                print(f" - {m.get('id')}")
     except urllib.error.HTTPError as e:
         status_code = e.code
         body = e.read().decode('utf-8')

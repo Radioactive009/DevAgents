@@ -3,7 +3,7 @@ import os
 from dotenv import load_dotenv
 
 # Load .env file explicitly for integration tests
-load_dotenv()
+load_dotenv(override=True)
 
 from llm.providers.groq_provider import GroqProvider
 from llm.providers.gemini_provider import GeminiProvider
@@ -15,7 +15,7 @@ class TestLLMProvidersIntegration(unittest.TestCase):
     
     def test_groq_live(self):
         # Using a fast, well-known model on Groq
-        provider = GroqProvider(model="llama3-8b-8192")
+        provider = GroqProvider(model="qwen/qwen3.8-27b")
         response = provider.generate("Say hello in one word.")
         
         self.assertIsInstance(response, LLMResponse)
@@ -28,9 +28,9 @@ class TestLLMProvidersIntegration(unittest.TestCase):
         self.assertTrue(response.latency_seconds > 0)
         
     def test_gemini_live(self):
-        # Using a fast model on Gemini
-        provider = GeminiProvider(model="gemini-1.5-pro")
-        response = provider.generate("Say hello in one word.")
+        # Using the default configured model on Gemini
+        provider = GeminiProvider(model=None)
+        response = provider.generate("Reply with exactly: OK")
         
         self.assertIsInstance(response, LLMResponse)
         self.assertTrue(len(response.text) > 0)
