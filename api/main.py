@@ -144,6 +144,13 @@ async def list_runs():
         })
     return {"runs": list(reversed(runs))}
 
+@app.get("/api/runs/{run_id}/project")
+async def get_run_project(run_id: str):
+    state = active_runs_state.get(run_id)
+    if not state or not state.generated_project:
+        return {"files": {}}
+    return {"files": state.generated_project.files}
+
 if __name__ == "__main__":
     import uvicorn
     uvicorn.run(app, host="0.0.0.0", port=8000)

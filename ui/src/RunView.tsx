@@ -8,6 +8,9 @@ export default function RunView() {
   const [metrics, setMetrics] = useState<any>(null);
   const [runInfo, setRunInfo] = useState<any>(null);
 
+  const [files, setFiles] = useState<any>({});
+  const [selectedFile, setSelectedFile] = useState<string | null>(null);
+
   useEffect(() => {
     // Poll for events and metrics
     const interval = setInterval(() => {
@@ -22,6 +25,10 @@ export default function RunView() {
       fetch(`/api/runs/${runId}/metrics`)
         .then(r => { if (r.ok) return r.json(); return null; })
         .then(data => { if (data) setMetrics(data); });
+
+      fetch(`/api/runs/${runId}/project`)
+        .then(r => { if (r.ok) return r.json(); return null; })
+        .then(data => { if (data && data.files) setFiles(data.files); });
     }, 1000);
     return () => clearInterval(interval);
   }, [runId]);
@@ -39,7 +46,6 @@ export default function RunView() {
   const getTestResults = () => events.filter(e => e.event_type === 'test').pop();
   const getDebugIterations = () => events.filter(e => e.event_type === 'debug');
   const getVerification = () => events.filter(e => e.event_type === 'verification').pop();
-  const getRetrievals = () => events.filter(e => e.event_type === 'retrieval');
   const getTools = () => events.filter(e => e.event_type === 'tool');
 
   return (
@@ -56,7 +62,7 @@ export default function RunView() {
               <Activity className="w-5 h-5 text-emerald-400" /> Pipeline Status
             </h2>
             <div className="flex flex-col md:flex-row gap-4 items-center justify-between">
-              {pipeline.map((agent, i) => {
+              {pipeline.map((agent) => {
                 const { status } = getAgentStatus(agent);
                 return (
                   <div key={agent} className="flex flex-col items-center gap-2 w-full">
@@ -83,12 +89,10 @@ export default function RunView() {
                 if (!t) return <p className="text-sm text-slate-500">Waiting for tests...</p>;
                 return (
                   <div className="space-y-3">
-                    <div className={`text-xl font-bold ${t.status === 'PASSED' ? 'text-emerald-400' : 'text-red-400'}`}>{t.status}</div>
+                    <div className={`text-xl font-bold ${t.success ? 'text-emerald-400' : 'text-red-400'}`}>{t.success ? 'PASSED' : 'FAILED'}</div>
                     <div className="grid grid-cols-2 gap-4 text-sm text-slate-300">
-                      <div>Passed: <span className="text-white font-medium">{t.tests_passed}</span></div>
-                      <div>Failed: <span className="text-white font-medium">{t.tests_failed}</span></div>
                       <div>Pass Rate: <span className="text-white font-medium">{Math.round(t.test_pass_rate * 100)}%</span></div>
-                      <div>Duration: <span className="text-white font-medium">{t.duration_s?.toFixed(2) || 'N/A'}s</span></div>
+                      <div>Duration: <span className="text-white font-medium">{t.duration_ms ? (t.duration_ms / 1000).toFixed(2) : 'N/A'}s</span></div>
                     </div>
                   </div>
                 );
@@ -102,7 +106,6 @@ export default function RunView() {
                 {getDebugIterations().map((d, i) => (
                   <div key={i} className="bg-[#0f111a] border border-slate-800 rounded p-3 text-sm">
                     <div className="font-medium text-slate-300 mb-1">Iteration {d.iteration}</div>
-                    <div className="text-slate-400 text-xs">Category: {d.failure_category}</div>
                     <div className={`text-xs mt-1 ${d.success ? 'text-emerald-400' : 'text-red-400'}`}>
                       {d.success ? 'Fixed' : 'Failed'}
                     </div>
@@ -127,12 +130,47 @@ export default function RunView() {
                   </div>
                   <div className="grid grid-cols-3 gap-4 text-sm text-slate-300 pt-2">
                     <div>Coverage: <span className="text-white font-medium">{Math.round(v.requirement_coverage * 100)}%</span></div>
-                    <div>Verified: <span className="text-emerald-400 font-medium">{v.verified_count}</span></div>
-                    <div>Unverified: <span className="text-red-400 font-medium">{v.unverified_count}</span></div>
                   </div>
                 </div>
               );
             })()}
+          </div>
+
+          <div className="bg-[#161925] border border-slate-800 rounded-xl p-6 shadow-xl">
+            <h2 className="text-lg font-bold mb-4 flex items-center gap-2"><Code className="w-5 h-5" /> Code Explorer</h2>
+            {Object.keys(files).length === 0 ? (
+              <p className="text-sm text-slate-500">Waiting for project generation...</p>
+            ) : (
+              <div className="grid grid-cols-1 md:grid-cols-4 gap-4 border border-slate-700 rounded-lg overflow-hidden h-96">
+                <div className="col-span-1 bg-[#0f111a] border-r border-slate-700 p-2 overflow-y-auto">
+                  {Object.keys(files).map(filename => (
+                    <div 
+                      key={filename} 
+                      onClick={() => setSelectedFile(filename)}
+                      className={`cursor-pointer p-2 text-sm rounded ${selectedFile === filename ? 'bg-blue-900/30 text-blue-400' : 'text-slate-300 hover:bg-slate-800'}`}
+                    >
+                      {filename}
+                    </div>
+                  ))}
+                </div>
+                <div className="col-span-3 bg-[#0a0c10] p-4 overflow-y-auto text-sm font-mono text-slate-300 whitespace-pre">
+                  {selectedFile ? files[selectedFile] : 'Select a file'}
+                </div>
+              </div>
+            )}
+          </div>
+
+          <div className="bg-[#161925] border border-slate-800 rounded-xl p-6 shadow-xl">
+            <h2 className="text-lg font-bold mb-4 flex items-center gap-2"><Activity className="w-5 h-5" /> Tool Activity</h2>
+            <div className="space-y-2 max-h-64 overflow-y-auto">
+              {getTools().length === 0 && <p className="text-sm text-slate-500">No tool activity.</p>}
+              {getTools().map((t, i) => (
+                <div key={i} className="bg-[#0f111a] border border-slate-800 p-3 rounded flex justify-between items-center">
+                  <div className="text-sm text-slate-300">{t.tool_name}</div>
+                  <div className={`text-xs ${t.success ? 'text-emerald-400' : 'text-red-400'}`}>{t.success ? 'Success' : 'Failed'}</div>
+                </div>
+              ))}
+            </div>
           </div>
 
         </div>
