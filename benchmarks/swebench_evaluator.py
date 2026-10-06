@@ -57,7 +57,12 @@ class SWEBenchNativeEvaluator:
         test_res = subprocess.run(test_cmd, cwd=workspace, capture_output=True, text=True)
         
         status = "PASS" if test_res.returncode == 0 else "FAIL"
-        category = "TEST_FAILURE" if status == "FAIL" else None
+        category = None
+        if status == "FAIL":
+            if "ModuleNotFoundError" in test_res.stdout or "ImportError" in test_res.stdout or "ModuleNotFoundError" in test_res.stderr:
+                category = "DEPENDENCY_FAILURE"
+            else:
+                category = "TEST_FAILURE"
         
         return {
             "status": status,
