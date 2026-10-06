@@ -7,6 +7,9 @@ import random
 import dataclasses
 from datetime import datetime, UTC
 from typing import Dict, Any, Optional, List
+from dotenv import load_dotenv
+
+load_dotenv()
 
 from experiments.schema import ExperimentProtocol, TaskManifestEntry, ExperimentRunResult
 from orchestration.workflow import run_single_agent_workflow, run_phase11_workflow
