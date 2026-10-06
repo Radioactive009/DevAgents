@@ -234,3 +234,148 @@ def run_phase9_workflow(
         state.metadata["verification_error"] = verification_result.error_message
         
     return state
+
+def run_phase11_workflow(
+    run_id: str,
+    user_requirement: str,
+    supervisor_provider: LLMProvider,
+    architecture_provider: LLMProvider,
+    coding_provider: LLMProvider,
+    testing_provider: LLMProvider,
+    debugging_provider: LLMProvider,
+    verification_provider: LLMProvider,
+    sandbox_config: Optional[dict] = None,
+    max_debug_iterations: int = 3,
+    use_rag: bool = False,
+    use_memory: bool = False,
+    use_tools: bool = True
+) -> ProjectState:
+    from observability.telemetry import Telemetry
+    from observability.schema import AgentEvent, TestEvent, DebugEvent, VerificationEvent, ErrorEvent
+    import time
+    
+    telemetry = Telemetry.get_instance()
+    
+    config = {
+        "use_rag": use_rag,
+        "use_memory": use_memory,
+        "use_tools": use_tools,
+        "max_debug_iterations": max_debug_iterations,
+        "sandbox_config": sandbox_config
+    }
+    telemetry.start_run(run_id, "task-" + run_id, config, getattr(supervisor_provider, "name", "unknown"), getattr(supervisor_provider, "model", "unknown"))
+
+    try:
+        state = ProjectState(run_id=run_id, user_requirement=user_requirement)
+        
+        # Phase 8 RAG and Memory Initialization (from phase 7)
+        from rag.schemas import RAGConfig
+        from rag.retriever import Retriever
+        from rag.memory import ProjectMemory
+        from rag.pipeline import RAGPipeline
+        import uuid
+        
+        rag_config = RAGConfig(use_rag=use_rag, use_memory=use_memory)
+        
+        retriever = None
+        if use_rag:
+            pipeline = RAGPipeline(rag_config)
+            pipeline.vector_store.load()
+            retriever = Retriever(pipeline.embedder, pipeline.vector_store)
+            
+        memory = None
+        if use_memory:
+            memory = ProjectMemory(rag_config.memory_store_path)
+            
+        state.metadata['retriever'] = retriever
+        state.metadata['memory'] = memory
+
+        # Supervisor
+        start_t = time.time()
+        supervisor = SupervisorAgent(provider=supervisor_provider)
+        res = supervisor.run(state)
+        telemetry.record_agent(AgentEvent(run_id=run_id, agent_name="SupervisorAgent", phase="supervisor", duration_ms=(time.time()-start_t)*1000, success=res.success))
+        if not res.success:
+            state.metadata["supervisor_error"] = res.error_message
+            telemetry.record_error(ErrorEvent(run_id=run_id, component="SupervisorAgent", phase="supervisor", error_type="AGENT_ERROR", message=str(res.error_message)))
+            telemetry.end_run(run_id, False, "SUPERVISOR_FAILED")
+            return state
+
+        # Architecture
+        start_t = time.time()
+        architecture = ArchitectureAgent(provider=architecture_provider)
+        res = architecture.run(state)
+        telemetry.record_agent(AgentEvent(run_id=run_id, agent_name="ArchitectureAgent", phase="architecture", duration_ms=(time.time()-start_t)*1000, success=res.success))
+        if not res.success:
+            state.metadata["architecture_error"] = res.error_message
+            telemetry.end_run(run_id, False, "ARCHITECTURE_FAILED")
+            return state
+
+        # Coding
+        from agents.coding import CodingAgent
+        start_t = time.time()
+        coding = CodingAgent(provider=coding_provider)
+        res = coding.run(state)
+        telemetry.record_agent(AgentEvent(run_id=run_id, agent_name="CodingAgent", phase="coding", duration_ms=(time.time()-start_t)*1000, success=res.success))
+        if not res.success:
+            state.metadata["coding_error"] = res.error_message
+            telemetry.end_run(run_id, False, "CODING_FAILED")
+            return state
+
+        # Testing & Debugging
+        from agents.testing import TestingAgent
+        from agents.debugging import DebuggingAgent
+        test_agent = TestingAgent(provider=testing_provider, sandbox_config=sandbox_config)
+        debug_agent = DebuggingAgent(provider=debugging_provider)
+
+        start_t = time.time()
+        test_res = test_agent.run(state)
+        telemetry.record_test(TestEvent(
+            run_id=run_id, duration_ms=(time.time()-start_t)*1000, success=test_res.success,
+            exit_code=getattr(state.test_result, "exit_code", None),
+            test_pass_rate=(state.test_result.tests_passed / max(1, state.test_result.tests_total)) if state.test_result and state.test_result.tests_total else 0.0
+        ))
+        
+        iterations = 0
+        while state.test_result and state.test_result.status != "PASSED" and iterations < max_debug_iterations:
+            start_d = time.time()
+            debug_res = debug_agent.run(state)
+            telemetry.record_debug(DebugEvent(run_id=run_id, iteration=iterations+1, success=debug_res.success, duration_ms=(time.time()-start_d)*1000, agent_name="DebuggingAgent"))
+            
+            if not debug_res.success:
+                state.metadata["debugging_error"] = debug_res.error_message
+                break
+                
+            start_t = time.time()
+            test_res = test_agent.run(state)
+            iterations += 1
+            telemetry.record_test(TestEvent(
+                run_id=run_id, duration_ms=(time.time()-start_t)*1000, success=test_res.success,
+                exit_code=getattr(state.test_result, "exit_code", None),
+                test_pass_rate=(state.test_result.tests_passed / max(1, state.test_result.tests_total)) if state.test_result and state.test_result.tests_total else 0.0
+            ))
+            
+            if not test_res.success:
+                state.metadata["testing_error"] = test_res.error_message
+                break
+
+        # Verification
+        from agents.verification import VerificationAgent
+        start_v = time.time()
+        verification_agent = VerificationAgent(provider=verification_provider)
+        res = verification_agent.run(state)
+        telemetry.record_verification(VerificationEvent(
+            run_id=run_id, duration_ms=(time.time()-start_v)*1000, status=getattr(state.verification_result, "status", "UNKNOWN"),
+            requirement_coverage=getattr(state.verification_result, "requirement_coverage", 0.0)
+        ))
+        if not res.success:
+            state.metadata["verification_error"] = res.error_message
+            
+        final_status = getattr(state.verification_result, "status", "UNKNOWN")
+        telemetry.end_run(run_id, final_status == "VERIFIED", final_status)
+        
+    except Exception as e:
+        telemetry.record_error(ErrorEvent(run_id=run_id, component="workflow", phase="unknown", error_type="WORKFLOW_ERROR", message=str(e)))
+        telemetry.end_run(run_id, False, "ERROR")
+
+    return state

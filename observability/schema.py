@@ -11,10 +11,11 @@ def get_utc_now() -> str:
 
 @dataclass
 class BaseEvent:
-    event_type: str
     run_id: str
+    event_type: str
     event_id: str = field(default_factory=generate_event_id)
     timestamp: str = field(default_factory=get_utc_now)
+
     
     def to_dict(self) -> Dict[str, Any]:
         return asdict(self)
