@@ -1,9 +1,9 @@
 import pytest
-from llm.providers.mock_provider import MockProvider
+from llm.base import MockLLMProvider
 from orchestration.workflow import run_phase7_workflow
 
 def test_workflow_rag_and_memory_disabled():
-    mock_provider = MockProvider()
+    mock_provider = MockLLMProvider()
     state = run_phase7_workflow(
         run_id="test_run",
         user_requirement="Create a hello world app",
@@ -18,7 +18,7 @@ def test_workflow_rag_and_memory_disabled():
     assert state is not None
 
 def test_workflow_rag_and_memory_enabled():
-    mock_provider = MockProvider()
+    mock_provider = MockLLMProvider()
     state = run_phase7_workflow(
         run_id="test_run_mem",
         user_requirement="Create a hello world app with rag",
