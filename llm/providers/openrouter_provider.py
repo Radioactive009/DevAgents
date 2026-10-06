@@ -76,57 +76,68 @@ class OpenRouterProvider(LLMProvider):
             **kwargs
         }
         
-        req = urllib.request.Request(
-            "https://openrouter.ai/api/v1/chat/completions",
-            data=json.dumps(payload).encode('utf-8'),
-            headers={
-                "Authorization": f"Bearer {self.api_key}",
-                "Content-Type": "application/json",
-                "HTTP-Referer": "https://github.com/Radioactive009/DevAgents",
-                "X-Title": "DevAgents"
-            },
-            method="POST"
-        )
+        max_retries = 5
+        base_delay = 2.0
         
-        try:
-            with urllib.request.urlopen(req, timeout=30) as response:
-                status_code = response.getcode()
-                response_body = response.read().decode('utf-8')
-                data = json.loads(response_body)
+        for attempt in range(max_retries):
+            req = urllib.request.Request(
+                "https://openrouter.ai/api/v1/chat/completions",
+                data=json.dumps(payload).encode('utf-8'),
+                headers={
+                    "Authorization": f"Bearer {self.api_key}",
+                    "Content-Type": "application/json",
+                    "HTTP-Referer": "https://github.com/Radioactive009/DevAgents",
+                    "X-Title": "DevAgents"
+                },
+                method="POST"
+            )
+            
+            try:
+                with urllib.request.urlopen(req, timeout=30) as response:
+                    status_code = response.getcode()
+                    response_body = response.read().decode('utf-8')
+                    data = json.loads(response_body)
+                    
+                    text = data['choices'][0]['message'].get('content') or ""
+                    
+                    usage = data.get('usage') or {}
+                    input_tokens = usage.get('prompt_tokens')
+                    output_tokens = usage.get('completion_tokens')
+                    total_tokens = usage.get('total_tokens')
+                    
+                    latency = time.time() - start_time
+                    
+                    return LLMResponse(
+                        text=text,
+                        provider="openrouter",
+                        model=self.model,
+                        input_tokens=input_tokens,
+                        output_tokens=output_tokens,
+                        total_tokens=total_tokens,
+                        latency_seconds=latency,
+                        raw_metadata=data
+                    )
+                    
+            except urllib.error.HTTPError as e:
+                err_body = e.read().decode('utf-8') if hasattr(e, 'read') else ''
+                if e.code == 401 or e.code == 403:
+                    raise LLMAuthenticationError(f"OpenRouter Auth Error ({e.code})")
+                elif e.code == 429:
+                    if attempt < max_retries - 1:
+                        delay = base_delay * (2 ** attempt)
+                        print(f"OpenRouter Rate Limited (429). Retrying in {delay}s...")
+                        time.sleep(delay)
+                        continue
+                    raise LLMRateLimitError(f"OpenRouter Rate Limited ({e.code}): Exhausted retries")
+                elif e.code == 400 or e.code == 404:
+                    raise LLMAPIError(f"OpenRouter Request Error ({e.code}): {err_body}")
+                else:
+                    raise LLMAPIError(f"OpenRouter Error ({e.code}): {err_body}")
+            except urllib.error.URLError as e:
+                if "timeout" in str(e.reason).lower():
+                    raise LLMTimeoutError("OpenRouter Timeout")
+                raise LLMAPIError(f"OpenRouter Network Error: {str(e.reason)}")
+            except Exception as e:
+                raise LLMAPIError(str(e))
                 
-                text = data['choices'][0]['message'].get('content') or ""
-                
-                usage = data.get('usage') or {}
-                input_tokens = usage.get('prompt_tokens')
-                output_tokens = usage.get('completion_tokens')
-                total_tokens = usage.get('total_tokens')
-                
-                latency = time.time() - start_time
-                
-                return LLMResponse(
-                    text=text,
-                    provider="openrouter",
-                    model=self.model,
-                    input_tokens=input_tokens,
-                    output_tokens=output_tokens,
-                    total_tokens=total_tokens,
-                    latency_seconds=latency,
-                    raw_metadata=data
-                )
-                
-        except urllib.error.HTTPError as e:
-            err_body = e.read().decode('utf-8')
-            if e.code == 401 or e.code == 403:
-                raise LLMAuthenticationError(f"OpenRouter Auth Error ({e.code})")
-            elif e.code == 429:
-                raise LLMRateLimitError(f"OpenRouter Rate Limited ({e.code})")
-            elif e.code == 400 or e.code == 404:
-                raise LLMAPIError(f"OpenRouter Request Error ({e.code})")
-            else:
-                raise LLMAPIError(f"OpenRouter Error ({e.code})")
-        except urllib.error.URLError as e:
-            if "timeout" in str(e.reason).lower():
-                raise LLMTimeoutError("OpenRouter Timeout")
-            raise LLMAPIError(f"OpenRouter Network Error: {str(e.reason)}")
-        except Exception as e:
-            raise LLMAPIError(str(e))
+        raise LLMRateLimitError("OpenRouter Rate Limited: Exhausted retries")
