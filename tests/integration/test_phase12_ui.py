@@ -1,7 +1,6 @@
 from fastapi.testclient import TestClient
 from api.main import app, active_runs
 import pytest
-from llm.mock import MockLLMProvider
 
 def test_phase12_integration_ui():
     client = TestClient(app)
