@@ -200,3 +200,57 @@ class TestResult:
     project_name: Optional[str] = None
     requirement_results: Dict[str, str] = field(default_factory=dict)
 
+@dataclass
+class DebugChange:
+    path: str
+    action: str
+    new_content: str
+    reason: str
+    old_context: str = ""
+    requirement_ids: List[str] = field(default_factory=list)
+
+    @classmethod
+    def from_dict(cls, data: dict) -> 'DebugChange':
+        return cls(
+            path=data.get("path", ""),
+            action=data.get("action", ""),
+            new_content=data.get("new_content", ""),
+            reason=data.get("reason", ""),
+            old_context=data.get("old_context", ""),
+            requirement_ids=data.get("requirement_ids", [])
+        )
+
+@dataclass
+class DebugPatch:
+    changes: List[DebugChange]
+    root_cause: str
+    failure_category: str
+    explanation: str
+
+    @classmethod
+    def from_dict(cls, data: dict) -> 'DebugPatch':
+        return cls(
+            changes=[DebugChange.from_dict(c) for c in data.get("changes", [])],
+            root_cause=data.get("root_cause", ""),
+            failure_category=data.get("failure_category", ""),
+            explanation=data.get("explanation", "")
+        )
+
+@dataclass
+class DebugResult:
+    success: bool
+    agent_name: str
+    root_cause: str
+    failure_category: str
+    affected_files: List[str]
+    changes: List[DebugChange]
+    reasoning_summary: str
+    requirement_ids: List[str]
+    debug_iteration: int
+    previous_test_status: str
+    provider: Optional[str] = None
+    model: Optional[str] = None
+    latency: Optional[float] = None
+    token_usage: Optional[int] = None
+    error_category: Optional[str] = None
+    error_message: Optional[str] = None

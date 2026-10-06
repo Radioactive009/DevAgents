@@ -4,7 +4,8 @@ from .supervisor import SupervisorAgent
 from .architecture import ArchitectureAgent
 from .coding import CodingAgent
 from .testing import TestingAgent
-from .schema import ProjectPlan, ArchitectureSpecification, GeneratedProject, GeneratedFile, TestResult
+from .debugging import DebuggingAgent
+from .schema import ProjectPlan, ArchitectureSpecification, GeneratedProject, GeneratedFile, TestResult, DebugPatch, DebugResult, DebugChange
 
 __all__ = [
     "AgentResult",
@@ -13,9 +14,13 @@ __all__ = [
     "ArchitectureAgent",
     "CodingAgent",
     "TestingAgent",
+    "DebuggingAgent",
     "ProjectPlan",
     "ArchitectureSpecification",
     "GeneratedProject",
     "GeneratedFile",
-    "TestResult"
+    "TestResult",
+    "DebugPatch",
+    "DebugResult",
+    "DebugChange"
 ]

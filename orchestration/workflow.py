@@ -78,3 +78,48 @@ def run_phase6_workflow(
         state.metadata["testing_error"] = testing_result.error_message
         
     return state
+
+def run_phase7_workflow(
+    run_id: str, 
+    user_requirement: str, 
+    supervisor_provider: LLMProvider, 
+    architecture_provider: LLMProvider,
+    coding_provider: LLMProvider,
+    testing_provider: LLMProvider,
+    debugging_provider: LLMProvider,
+    sandbox_config: Optional[dict] = None,
+    max_debug_iterations: int = 3
+) -> ProjectState:
+    
+    state = run_phase6_workflow(
+        run_id, user_requirement, supervisor_provider, architecture_provider, coding_provider, testing_provider, sandbox_config
+    )
+    
+    if not state.test_result:
+        return state
+        
+    from agents.debugging import DebuggingAgent
+    from agents.testing import TestingAgent
+    
+    debug_agent = DebuggingAgent(provider=debugging_provider)
+    test_agent = TestingAgent(provider=testing_provider, sandbox_config=sandbox_config)
+    
+    iterations = 0
+    while state.test_result.status != "PASSED" and iterations < max_debug_iterations:
+        debug_result = debug_agent.run(state)
+        
+        if not debug_result.success:
+            state.metadata["debugging_error"] = debug_result.error_message
+            break
+            
+        test_result = test_agent.run(state)
+        iterations += 1
+        
+        if not test_result.success:
+            state.metadata["testing_error"] = test_result.error_message
+            break
+            
+    if state.test_result.status != "PASSED" and iterations >= max_debug_iterations:
+        state.metadata["debugging_error"] = "DEBUG_ITERATION_LIMIT"
+        
+    return state
