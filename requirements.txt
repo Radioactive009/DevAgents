@@ -1,1 +1,5 @@
 PyYAML==6.0.1
+groq
+google-genai
+huggingface_hub
+python-dotenv

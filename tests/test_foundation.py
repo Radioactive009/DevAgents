@@ -10,7 +10,7 @@ class TestFoundation(unittest.TestCase):
     def test_mock_llm_provider(self):
         provider = MockLLMProvider()
         response = provider.generate("Hello")
-        self.assertEqual(response, "This is a mock LLM response.")
+        self.assertEqual(response.text, "This is a mock LLM response.")
 
     def test_config_loading(self):
         config_path = os.path.join(os.path.dirname(__file__), "..", "configs", "experiment_config.yaml")

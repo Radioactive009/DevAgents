@@ -65,3 +65,26 @@ Every run is logged with its configuration, model details, random seed, task inf
 ## 12. Current Implementation Status
 **Phase 1 foundation only — AI agents are not implemented yet.**
 "# DevAgents" 
+
+## 13. LLM Provider Architecture
+We use provider abstraction so that experimental configurations can be compared without coupling the agent implementation to a single LLM provider.
+
+The architecture isolates the core application from specific AI vendor APIs:
+
+`	ext
+Application
+    ↓
+LLMProvider
+    ↓
+Provider Factory
+    ↓
+Groq / Gemini / Hugging Face
+`
+
+- **Provider Abstraction**: All LLM calls go through LLMProvider and return a uniform LLMResponse.
+- **Provider Factory**: create_llm_provider(config) dynamically selects the provider.
+- **Supported Providers**: Groq, Google Gemini, Hugging Face.
+- **Mock Provider**: A deterministic MockLLMProvider allows testing without internet access or real API keys.
+- **Configuration & API Key Management**: API keys are read from environment variables (GROQ_API_KEY, GEMINI_API_KEY, HF_API_KEY). Keys are never logged. Model and provider selections are managed via configuration files.
+- **Error Handling**: Provider-specific API errors, rate limits, and auth failures are normalized into standard exceptions (LLMError, LLMRateLimitError, etc.).
+- **Reproducibility**: The provider, model, latency, and token counts are extracted generically and passed to the experiment logger for valid comparisons.
