@@ -25,9 +25,10 @@ class SWEBenchNativeEvaluator:
         python_exe = os.path.join(venv_dir, "Scripts", "python") if os.name == "nt" else os.path.join(venv_dir, "bin", "python")
         pytest_exe = os.path.join(venv_dir, "Scripts", "pytest") if os.name == "nt" else os.path.join(venv_dir, "bin", "pytest")
         
-        subprocess.run([pip_exe, "install", "-e", "."], cwd=workspace, check=True, capture_output=True)
         if "pytest" in task_id:
-            subprocess.run([pip_exe, "install", "pytest"], cwd=workspace, check=True, capture_output=True)
+            subprocess.run([pip_exe, "install", "-e", ".[testing]"], cwd=workspace, check=True, capture_output=True)
+        else:
+            subprocess.run([pip_exe, "install", "-e", "."], cwd=workspace, check=True, capture_output=True)
         
         # 5. Apply ONLY the agent-generated patch
         if patch_content and patch_content.strip():
