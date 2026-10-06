@@ -21,10 +21,79 @@ class SingleAgentBaseline(Agent):
         )
 
     def run(self, state: ProjectState) -> AgentResult:
+        # If we are in an existing SWE-bench workspace (determined by sandbox), use the repo editor mode
+        if hasattr(state, "sandbox") and hasattr(state.sandbox, "workspace_dir") and os.path.exists(os.path.join(state.sandbox.workspace_dir, ".git")):
+            return self._run_existing_repo_loop(state)
+        
         if not state.generated_project:
             return self._generate_initial_project(state)
         else:
             return self._debug_project(state)
+            
+    def _run_existing_repo_loop(self, state: ProjectState) -> AgentResult:
+        workspace = state.sandbox.workspace_dir
+        
+        prompt = (
+            f"User Requirement:\n{state.user_requirement}\n\n"
+            "You are operating in an existing code repository. "
+            "You can inspect files and run tests by outputting a JSON object with a 'command' key.\n"
+            "Example: {\"command\": \"cat some_file.py\"} or {\"command\": \"pytest tests/\"}\n"
+            "When you are ready to apply a fix, output a DebugPatch JSON instead, with the 'changes' array containing 'modify', 'create', or 'delete' actions.\n"
+            "You have maximum 5 interactions."
+        )
+        
+        import subprocess
+        messages = [{"role": "user", "content": prompt}]
+        
+        for iteration in range(5):
+            try:
+                # We format the messages list into a single prompt string since LLMProvider generic generate takes a prompt string.
+                # To be compatible, we will just concatenate them.
+                full_prompt = "\n\n".join([f"{m['role'].upper()}:\n{m['content']}" for m in messages])
+                
+                response = self.provider.generate(
+                    prompt=full_prompt,
+                    system_prompt=self.system_prompt,
+                    temperature=0.2
+                )
+                
+                messages.append({"role": "assistant", "content": response.text})
+                
+                parsed_json = parse_json_response(response.text)
+                
+                if "command" in parsed_json:
+                    cmd = parsed_json["command"]
+                    res = subprocess.run(cmd, cwd=workspace, shell=True, capture_output=True, text=True)
+                    output = f"STDOUT:\n{res.stdout}\nSTDERR:\n{res.stderr}"
+                    messages.append({"role": "user", "content": output[:2000]}) # truncate to avoid blowing up context
+                elif "changes" in parsed_json:
+                    patch = DebugPatch.from_dict(parsed_json)
+                    # For a baseline, we just apply it manually
+                    for change in patch.changes:
+                        file_path = os.path.join(workspace, change.path)
+                        if change.action == "create" or change.action == "modify":
+                            os.makedirs(os.path.dirname(file_path), exist_ok=True)
+                            with open(file_path, "w") as f:
+                                f.write(change.new_content)
+                        elif change.action == "delete":
+                            if os.path.exists(file_path):
+                                os.remove(file_path)
+                    
+                    return self._create_result(
+                        success=True, run_id=state.run_id, output=patch, raw_response_available=True,
+                        provider_name=response.provider, model_name=response.model,
+                        latency=response.latency_seconds, token_usage=response.total_tokens
+                    )
+                else:
+                    messages.append({"role": "user", "content": "Error: Output must contain either 'command' or 'changes' array."})
+                    
+            except Exception as e:
+                messages.append({"role": "user", "content": f"Error parsing response: {str(e)}"})
+                
+        return self._create_result(
+            success=False, run_id=state.run_id, output=None, raw_response_available=False,
+            error_category="ITERATION_LIMIT", error_message="Failed to solve within iterations."
+        )
 
     def _generate_initial_project(self, state: ProjectState) -> AgentResult:
         prompt = (

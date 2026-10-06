@@ -26,12 +26,14 @@ class SWEBenchExecutionLayer:
         return workspace
 
     def extract_patch(self, workspace: str, base_commit: str) -> str:
-        # We assume git is tracking changes
-        subprocess.run(["git", "add", "."], cwd=workspace, capture_output=True)
+        # We explicitly handle untracked files by adding them
+        subprocess.run(["git", "add", "-A"], cwd=workspace, capture_output=True)
         result = subprocess.run(
-            ["git", "diff", "--no-color", "--cached"],
+            ["git", "diff", "--no-color", "--cached", base_commit],
             cwd=workspace,
             capture_output=True,
             text=True
         )
+        # Unstage everything to leave workspace cleanish
+        subprocess.run(["git", "reset", "HEAD"], cwd=workspace, capture_output=True)
         return result.stdout

@@ -406,6 +406,12 @@ def run_single_agent_workflow(
     try:
         state = ProjectState(run_id=run_id, user_requirement=user_requirement)
         
+        # Determine sandbox
+        sandbox = sandbox_override if sandbox_override else DockerSandbox(sandbox_config)
+        if not sandbox_override:
+            sandbox.create_workspace()
+        state.sandbox = sandbox
+        
         # Single Agent initialization
         from agents.single_agent_baseline import SingleAgentBaseline
         agent = SingleAgentBaseline(provider=provider, max_retries=2)
