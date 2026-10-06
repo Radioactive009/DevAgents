@@ -2,7 +2,7 @@ import os
 from dataclasses import dataclass, field
 from typing import Optional, Dict, Any
 
-from agents.schema import ProjectPlan, ArchitectureSpecification, GeneratedProject
+from agents.schema import ProjectPlan, ArchitectureSpecification, GeneratedProject, TestResult
 
 @dataclass
 class ProjectState:
@@ -11,5 +11,6 @@ class ProjectState:
     project_plan: Optional[ProjectPlan] = None
     architecture: Optional[ArchitectureSpecification] = None
     generated_project: Optional[GeneratedProject] = None
+    test_result: Optional[TestResult] = None
     metadata: Dict[str, Any] = field(default_factory=dict)
 

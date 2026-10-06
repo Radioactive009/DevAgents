@@ -3,7 +3,8 @@ from .base import Agent
 from .supervisor import SupervisorAgent
 from .architecture import ArchitectureAgent
 from .coding import CodingAgent
-from .schema import ProjectPlan, ArchitectureSpecification, GeneratedProject, GeneratedFile
+from .testing import TestingAgent
+from .schema import ProjectPlan, ArchitectureSpecification, GeneratedProject, GeneratedFile, TestResult
 
 __all__ = [
     "AgentResult",
@@ -11,8 +12,10 @@ __all__ = [
     "SupervisorAgent",
     "ArchitectureAgent",
     "CodingAgent",
+    "TestingAgent",
     "ProjectPlan",
     "ArchitectureSpecification",
     "GeneratedProject",
-    "GeneratedFile"
+    "GeneratedFile",
+    "TestResult"
 ]
