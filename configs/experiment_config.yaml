@@ -23,3 +23,11 @@ enable_verification: false
 dataset_name: "dummy_dataset"
 random_seed: 42
 logging_level: "INFO"
+execution:
+  runtime: docker
+  image: python:3.11-slim
+  timeout_seconds: 30
+  memory_limit_mb: 512
+  cpu_limit: 1.0
+  network_enabled: false
+  cleanup: true
