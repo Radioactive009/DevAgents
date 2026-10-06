@@ -9,6 +9,7 @@ export default function Dashboard() {
   const [useRag, setUseRag] = useState(false);
   const [useMemory, setUseMemory] = useState(false);
   const [provider, setProvider] = useState('groq');
+  const [system, setSystem] = useState('MULTI_AGENT');
   const [runs, setRuns] = useState<any[]>([]);
 
   useEffect(() => {
@@ -28,7 +29,8 @@ export default function Dashboard() {
         requirements: reqList,
         use_rag: useRag,
         use_memory: useMemory,
-        provider: provider
+        provider: provider,
+        system: system
       })
     });
     if (res.ok) {
@@ -46,6 +48,17 @@ export default function Dashboard() {
           </h2>
           
           <div className="space-y-4">
+            <div>
+              <label className="block text-sm font-medium text-slate-400 mb-2">System Architecture</label>
+              <select 
+                className="w-full bg-[#0f111a] border border-slate-700 rounded-lg p-3 text-slate-200 focus:outline-none focus:border-blue-500"
+                value={system}
+                onChange={e => setSystem(e.target.value)}
+              >
+                <option value="MULTI_AGENT">Multi-Agent Workflow</option>
+                <option value="SINGLE_AGENT_BASELINE">Single-Agent Baseline</option>
+              </select>
+            </div>
             <div>
               <label className="block text-sm font-medium text-slate-400 mb-2">Task Description</label>
               <textarea 
