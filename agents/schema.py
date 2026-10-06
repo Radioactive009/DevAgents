@@ -178,3 +178,25 @@ class GeneratedProject:
             dependencies=data.get("dependencies", []),
             requirement_coverage=data.get("requirement_coverage", {})
         )
+
+@dataclass
+class TestResult:
+    success: bool
+    status: str
+    command: str
+    exit_code: Optional[int]
+    stdout: str
+    stderr: str
+    duration: float
+    timed_out: bool
+    tests_total: Optional[int] = None
+    tests_passed: Optional[int] = None
+    tests_failed: Optional[int] = None
+    tests_skipped: Optional[int] = None
+    tests_errors: Optional[int] = None
+    failure_category: Optional[str] = None
+    sandbox_id: Optional[str] = None
+    test_framework: Optional[str] = None
+    project_name: Optional[str] = None
+    requirement_results: Dict[str, str] = field(default_factory=dict)
+
