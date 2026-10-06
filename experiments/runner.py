@@ -40,7 +40,30 @@ class ExperimentRunner:
             raise FileNotFoundError(f"Task manifest not found: {path}")
         with open(path, "r") as f:
             data = json.load(f)
-        return [TaskManifestEntry(**item) for item in data if item.get("inclusion_status") == "INCLUDED"]
+            
+        # If it's a list of dicts (old schema), return old way or fail. We assume list of strings.
+        if data and isinstance(data[0], dict):
+            return [TaskManifestEntry(**item) for item in data if item.get("inclusion_status") == "INCLUDED"]
+            
+        from benchmarks.swebench_adapter import SWEBenchAdapter
+        adapter = SWEBenchAdapter()
+        
+        manifest = []
+        for task_id in data:
+            meta = adapter.get_task_metadata(task_id)
+            entry = TaskManifestEntry(
+                task_id=meta["task_id"],
+                benchmark=meta["benchmark"],
+                benchmark_version=self.protocol.benchmark_version,
+                repository=meta["repository"],
+                issue_id=task_id,
+                task_description=meta["problem_statement"],
+                expected_evaluation="Pass benchmark tests",
+                difficulty="Unknown",
+                inclusion_status="INCLUDED"
+            )
+            manifest.append(entry)
+        return manifest
 
     def validate_pre_flight(self):
         """Validates configuration before allowing ANY execution."""

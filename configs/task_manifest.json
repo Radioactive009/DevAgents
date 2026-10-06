@@ -1,24 +1,4 @@
 [
-  {
-    "task_id": "pytest-dev__pytest-11143",
-    "benchmark": "SWE-bench Lite",
-    "benchmark_version": "1.0",
-    "repository": "pytest-dev/pytest",
-    "issue_id": "11143",
-    "task_description": "Fix issue where isinstance(1, int) fails in assertions.",
-    "expected_evaluation": "Run pytest test suite against the patched repository",
-    "difficulty": "medium",
-    "inclusion_status": "INCLUDED"
-  },
-  {
-    "task_id": "django__django-16816",
-    "benchmark": "SWE-bench Lite",
-    "benchmark_version": "1.0",
-    "repository": "django/django",
-    "issue_id": "16816",
-    "task_description": "Fix bug in QuerySet handling when iterating.",
-    "expected_evaluation": "Run django test suite",
-    "difficulty": "medium",
-    "inclusion_status": "INCLUDED"
-  }
+  "pytest-dev__pytest-11143",
+  "django__django-16816"
 ]
