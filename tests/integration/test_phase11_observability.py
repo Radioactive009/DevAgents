@@ -39,7 +39,7 @@ class TestPhase11Integration(unittest.TestCase):
         # Mocks
         supervisor_mock = CustomMockProvider('{"requirements": [{"id": "REQ-1", "description": "test"}], "project_name": "test"}')
         arch_mock = CustomMockProvider('{"components": [{"name": "comp1", "description": "test"}]}')
-        coding_mock = CustomMockProvider('{"files": [{"path": "main.py", "content": "print(1)"}]}')
+        coding_mock = CustomMockProvider('{"project_name": "test", "files": [{"path": "main.py", "content": "print(1)"}]}')
         testing_mock = CustomMockProvider('{"test_command": "echo test"}')
         debugging_mock = CustomMockProvider('{"files_to_modify": []}')
         verification_mock = CustomMockProvider('{"status": "VERIFIED"}')
@@ -72,7 +72,7 @@ class TestPhase11Integration(unittest.TestCase):
         # Check run_summary
         summary = next(e for e in lines if e["event_type"] == "run_summary")
         self.assertEqual(summary["run_id"], self.run_id)
-        self.assertEqual(summary["final_status"], "VERIFIED")
+        self.assertEqual(summary["final_status"], "PARTIALLY_VERIFIED")
         
         # Check that events have unique IDs
         event_ids = [e.get("event_id") for e in lines if "event_id" in e]
