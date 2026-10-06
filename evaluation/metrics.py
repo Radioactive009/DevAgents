@@ -6,7 +6,7 @@ def task_success_rate(runs: List[Dict[str, Any]]) -> float:
     successes = sum(1 for run in runs if run.get("task_success", False))
     return successes / len(runs)
 
-def test_pass_rate(runs: List[Dict[str, Any]]) -> float:
+def calculate_test_pass_rate(runs: List[Dict[str, Any]]) -> float:
     if not runs:
         return 0.0
     total_tests = sum(run.get("tests_total", 0) for run in runs)

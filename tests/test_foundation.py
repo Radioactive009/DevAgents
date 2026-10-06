@@ -4,7 +4,7 @@ import yaml
 import json
 from llm.base import MockLLMProvider
 from experiments.runner import ExperimentRunner, ExperimentLogger
-from evaluation.metrics import task_success_rate, test_pass_rate
+from evaluation.metrics import task_success_rate, calculate_test_pass_rate
 
 class TestFoundation(unittest.TestCase):
     def test_mock_llm_provider(self):
