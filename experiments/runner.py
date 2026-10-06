@@ -10,7 +10,7 @@ from typing import Dict, Any, Optional, List
 
 from experiments.schema import ExperimentProtocol, TaskManifestEntry, ExperimentRunResult
 from orchestration.workflow import run_single_agent_workflow, run_phase11_workflow
-from llm.base import create_llm_provider
+from llm.factory import create_llm_provider
 from observability.telemetry import Telemetry
 
 class ExperimentRunner:
