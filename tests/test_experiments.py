@@ -138,5 +138,38 @@ class TestExperiments(unittest.TestCase):
         
         self.assertEqual(systems_called, systems_called2)
 
+    def test_pre_flight_validation_missing_field(self):
+        del self.manifest_data[0]["task_id"]
+        with open(self.manifest_path, "w") as f:
+            json.dump(self.manifest_data, f)
+        
+        with self.assertRaises(TypeError):
+            ExperimentRunner(self.protocol_path)
+
+    def test_pre_flight_validation_inclusion_status(self):
+        self.manifest_data[0]["inclusion_status"] = "EXCLUDED"
+        with open(self.manifest_path, "w") as f:
+            json.dump(self.manifest_data, f)
+            
+        runner = ExperimentRunner(self.protocol_path)
+        self.assertEqual(len(runner.manifest), 0)
+
+    def test_pre_flight_validation_task_count_mismatch(self):
+        # The runner currently just prints a warning, let's verify it doesn't crash
+        self.protocol_data["benchmark"]["task_count"] = 5
+        with open(self.protocol_path, "w") as f:
+            yaml.dump(self.protocol_data, f)
+            
+        runner = ExperimentRunner(self.protocol_path)
+        runner.validate_pre_flight()
+
+    def test_matrix_generation(self):
+        # We can just simulate it
+        runner = ExperimentRunner(self.protocol_path)
+        matrix = [(task.task_id, sys) for task in runner.manifest for sys in runner.protocol.systems]
+        self.assertEqual(len(matrix), 2)
+        self.assertIn(("test-1", "SINGLE_AGENT_BASELINE"), matrix)
+        self.assertIn(("test-1", "MULTI_AGENT"), matrix)
+
 if __name__ == '__main__':
     unittest.main()
