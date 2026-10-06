@@ -163,18 +163,14 @@ class DebuggingAgent(Agent):
         
         rag_chunks = None
         if retriever:
-            query = f"{state.test_result.command}
-{state.test_result.stdout}
-{state.test_result.stderr}"
+            query = f"{state.test_result.command}\\n{state.test_result.stdout}\\n{state.test_result.stderr}"
             chunks, latency = retriever.retrieve(query, top_k=3)
             rag_chunks = chunks
             state.rag_metadata['last_retrieval'] = {'query': query, 'latency': latency, 'chunks': [c['chunk_id'] for c in chunks]}
             
         memory_records = None
         if memory:
-            query = f"{state.test_result.command}
-{state.test_result.stdout}
-{state.test_result.stderr}"
+            query = f"{state.test_result.command}\\n{state.test_result.stdout}\\n{state.test_result.stderr}"
             records, latency = memory.retrieve_relevant_memory(query, top_k=3)
             memory_records = records
             state.memory_metadata['last_retrieval'] = {'query': query, 'latency': latency, 'records': [r.memory_id for r in records]}
@@ -188,9 +184,7 @@ class DebuggingAgent(Agent):
             memory_records=memory_records
         )
         
-        return safe_context + "
-
-Provide the exact DebugPatch JSON to fix the failure."
+        return safe_context + "\\n\\nProvide the exact DebugPatch JSON to fix the failure."
     def _validate_patch(self, patch: DebugPatch, state: ProjectState):
         valid_req_ids = set()
         if state.project_plan:
