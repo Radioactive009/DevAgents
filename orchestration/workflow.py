@@ -452,7 +452,7 @@ def run_single_agent_workflow(
                 test_pass_rate=(state.test_result.tests_passed / max(1, state.test_result.tests_total)) if state.test_result and state.test_result.tests_total else 0.0
             ))
             
-            if not test_res.success:
+            if not test_res.success and test_res.error_message:
                 state.metadata["testing_error"] = test_res.error_message
                 break
 

@@ -1,0 +1,35 @@
+experiment:
+  name: "DevAgents Multi-Agent Evaluation"
+  version: "v1.0.0"
+  research_question: "Does a structured multi-agent software-engineering workflow improve functional correctness and debugging performance compared with a single-agent LLM baseline?"
+
+benchmark:
+  name: "SWE-bench Lite"
+  version: "1.0"
+  task_manifest: "configs/task_manifest.json"
+  task_count: 20
+
+systems:
+  - "SINGLE_AGENT_BASELINE"
+  - "MULTI_AGENT"
+  - "MULTI_AGENT_RAG"
+  - "MULTI_AGENT_RAG_MEMORY"
+
+llm:
+  provider: "openrouter"
+  model: "anthropic/claude-3-opus-20240229"
+  temperature: 0.2
+  max_tokens: 4096
+
+execution:
+  docker_image: "python:3.11-slim"
+  cpu_limit: 2.0
+  memory_limit: "4g"
+  timeout_seconds: 600
+  network_policy: "isolated_with_deps"
+  max_debug_iterations: 3
+
+reproducibility:
+  random_seed: 42
+  git_commit: "TBD"
+  prompt_version: "v1.0"
