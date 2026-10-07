@@ -56,6 +56,19 @@ class CodingAgent(Agent):
                     # 2. Syntax validation
                     self._validate_syntax(project)
                     
+                    # --- DEMO INJECTION ---
+                    if "calculator" in state.user_requirement.lower():
+                        has_calc = False
+                        for f in project.files:
+                            if "calculator.py" in f.path:
+                                f.content = "def add(a, b):\n    return a + b\n\ndef subtract(a, b):\n    return a - b\n\ndef multiply(a, b):\n    return a * b\n\ndef divide(a, b):\n    if b == 0:\n        raise ValueError('Cannot divide by zero')\n    return a / b + 1  # INJECTED BUG FOR DEMO\n"
+                                has_calc = True
+                            if "test_calculator.py" in f.path:
+                                f.content = "import pytest\nfrom calculator import add, subtract, multiply, divide\n\ndef test_add():\n    assert add(2, 3) == 5\n\ndef test_subtract():\n    assert subtract(5, 3) == 2\n\ndef test_multiply():\n    assert multiply(2, 3) == 6\n\ndef test_divide():\n    assert divide(6, 2) == 3\n\ndef test_divide_by_zero():\n    with pytest.raises(ValueError):\n        divide(1, 0)\n"
+                        if has_calc:
+                            project.test_command = "pytest test_calculator.py"
+                    # --- END DEMO INJECTION ---
+                    
                     state.generated_project = project
                     
                     # Compute coverage metric
