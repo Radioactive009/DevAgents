@@ -346,9 +346,19 @@ def run_phase11_workflow(
             exit_code=getattr(state.test_result, "exit_code", None),
             test_pass_rate=(state.test_result.tests_passed / max(1, state.test_result.tests_total)) if state.test_result and state.test_result.tests_total else 0.0
         ))
-        
+
+        # Check if test execution failed due to unrecoverable infrastructure/sandbox failure
+        if not test_res.success and (state.test_result is None or state.test_result.status in ["SANDBOX_ERROR", "ERROR"] and state.test_result.failure_category in ["SANDBOX_ERROR", "DOCKER_ERROR"]):
+            state.metadata["testing_error"] = test_res.error_message or "Testing failed due to infrastructure error"
+            telemetry.end_run(run_id, False, "INFRASTRUCTURE_ERROR")
+            return state
+
         iterations = 0
-        while state.test_result and state.test_result.status != "PASSED" and iterations < max_debug_iterations:
+        while iterations < max_debug_iterations:
+            # If tests exist and are PASSED, exit loop
+            if state.test_result and state.test_result.status == "PASSED":
+                break
+
             start_d = time.time()
             debug_res = debug_agent.run(state)
             telemetry.record_debug(DebugEvent(run_id=run_id, iteration=iterations+1, success=debug_res.success, duration_ms=(time.time()-start_d)*1000, agent_name="DebuggingAgent"))
@@ -366,7 +376,7 @@ def run_phase11_workflow(
                 test_pass_rate=(state.test_result.tests_passed / max(1, state.test_result.tests_total)) if state.test_result and state.test_result.tests_total else 0.0
             ))
             
-            if not test_res.success:
+            if not test_res.success and (state.test_result is None or state.test_result.status == "ERROR"):
                 state.metadata["testing_error"] = test_res.error_message
                 break
 

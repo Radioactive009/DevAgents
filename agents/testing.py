@@ -7,7 +7,8 @@ from agents.base import Agent
 from agents.models import AgentResult
 from orchestration.state import ProjectState
 from agents.schema import TestResult, GeneratedProject
-from execution.docker_sandbox import DockerSandbox, SandboxConfigurationError
+from execution.docker_sandbox import DockerSandbox, check_docker_available, SandboxConfigurationError
+from execution.local_sandbox import LocalProcessSandbox
 
 class TestingAgent(Agent):
     def __init__(self, provider, sandbox_config: Optional[Dict[str, Any]] = None):
@@ -40,8 +41,12 @@ class TestingAgent(Agent):
         try:
             if hasattr(state, "sandbox") and state.sandbox:
                 sandbox = state.sandbox
-            else:
+            elif check_docker_available():
                 sandbox = DockerSandbox(self.sandbox_config)
+                sandbox.create_workspace()
+                state.sandbox = sandbox
+            else:
+                sandbox = LocalProcessSandbox(self.sandbox_config)
                 sandbox.create_workspace()
                 state.sandbox = sandbox
             
@@ -157,21 +162,49 @@ class TestingAgent(Agent):
             )
             
         except SandboxConfigurationError as e:
+            err_result = TestResult(
+                success=False,
+                status="ERROR",
+                command=getattr(project, "test_command", "unknown"),
+                exit_code=None,
+                stdout="",
+                stderr=str(e),
+                duration=0.0,
+                timed_out=False,
+                failure_category="SANDBOX_ERROR",
+                sandbox_id=getattr(sandbox, "sandbox_id", None),
+                project_name=getattr(project, "project_name", "unknown")
+            )
+            state.test_result = err_result
             return self._create_result(
                 success=False,
                 run_id=state.run_id,
-                output=None,
+                output=err_result,
                 raw_response_available=False,
                 error_category="SANDBOX_ERROR",
                 error_message=str(e)
             )
         except Exception as e:
+            err_result = TestResult(
+                success=False,
+                status="ERROR",
+                command=getattr(project, "test_command", "unknown"),
+                exit_code=None,
+                stdout="",
+                stderr=str(e),
+                duration=0.0,
+                timed_out=False,
+                failure_category="EXECUTION_ERROR",
+                sandbox_id=getattr(sandbox, "sandbox_id", None),
+                project_name=getattr(project, "project_name", "unknown")
+            )
+            state.test_result = err_result
             return self._create_result(
                 success=False,
                 run_id=state.run_id,
-                output=None,
+                output=err_result,
                 raw_response_available=False,
-                error_category="SANDBOX_ERROR",
+                error_category="EXECUTION_ERROR",
                 error_message=str(e)
             )
         finally:

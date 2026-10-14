@@ -59,12 +59,13 @@ class DebuggingAgent(Agent):
                     if original_calc and "+ 1" in original_calc:
                         fixed_calc = original_calc.replace("return a / b + 1  # INJECTED BUG FOR DEMO", "return a / b")
                         from agents.schema import DebugChange
+                        req_ids = [state.project_plan.requirements[0].id] if state.project_plan and state.project_plan.requirements else []
                         demo_patch = DebugPatch(
                             root_cause="The divide function adds 1 to the result incorrectly.",
                             failure_category="LOGIC_ERROR",
                             explanation="Removed the incorrect +1 from the divide function to fix the AssertionError.",
                             changes=[
-                                DebugChange(action="modify", path="calculator.py", reason="Fix divide", new_content=fixed_calc, requirement_ids=["REQ-01"])
+                                DebugChange(action="modify", path="calculator.py", reason="Fix divide", new_content=fixed_calc, requirement_ids=req_ids)
                             ]
                         )
                 # --- END DEMO INJECTION ---
