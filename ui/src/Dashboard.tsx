@@ -4,8 +4,8 @@ import { Play, Settings, Database, Server, Clock, Activity, CheckCircle, XCircle
 
 export default function Dashboard() {
   const navigate = useNavigate();
-  const [taskDesc, setTaskDesc] = useState('Build a Python REST API for managing student courses...');
-  const [requirements, setRequirements] = useState('Users can create courses.\nUsers can retrieve courses.\nInvalid course IDs return a proper error.\nThe API must include tests.');
+  const [taskDesc, setTaskDesc] = useState('');
+  const [requirements, setRequirements] = useState('');
   const [useRag, setUseRag] = useState(false);
   const [useMemory, setUseMemory] = useState(false);
   const [provider, setProvider] = useState('groq');

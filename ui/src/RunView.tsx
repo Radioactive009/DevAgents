@@ -36,7 +36,7 @@ export default function RunView() {
   const pipeline = ["supervisor", "architecture", "coding", "testing", "debugging", "verification"];
   
   const getAgentStatus = (agentName: string) => {
-    const agentEvents = events.filter(e => e.event_type === 'agent' && e.agent_name?.toLowerCase() === agentName);
+    const agentEvents = events.filter(e => e.event_type === 'agent' && e.agent_name?.toLowerCase() === `${agentName}agent`);
     if (agentEvents.length === 0) return { status: 'WAITING', duration: null };
     const latestEvent = agentEvents[agentEvents.length - 1];
     if (latestEvent.action === 'started') return { status: 'RUNNING', duration: null };
@@ -68,9 +68,9 @@ export default function RunView() {
                 const { status } = getAgentStatus(agent);
                 return (
                   <div key={agent} className="flex flex-col items-center gap-2 w-full">
-                    <div className={`w-full text-center py-3 px-4 rounded-lg border font-medium text-sm transition-colors ${
+                    <div className={`w-full text-center py-3 px-4 rounded-lg border font-medium text-sm transition-all duration-300 ${
                       status === 'COMPLETED' ? 'bg-emerald-900/20 border-emerald-500/50 text-emerald-400' :
-                      status === 'RUNNING' ? 'bg-blue-900/20 border-blue-500/50 text-blue-400 animate-pulse' :
+                      status === 'RUNNING' ? 'bg-blue-900/30 border-blue-400 text-blue-300 shadow-[0_0_20px_rgba(59,130,246,0.8)] scale-105' :
                       'bg-[#0f111a] border-slate-800 text-slate-500'
                     }`}>
                       {agent.charAt(0).toUpperCase() + agent.slice(1)}

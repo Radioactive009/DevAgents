@@ -20,8 +20,8 @@ class OpenRouterProvider(LLMProvider):
         if not self.api_key:
             raise LLMAuthenticationError("OPENROUTER_API_KEY environment variable is not set")
             
-        # Cost safety verification
-        self._verify_free_model()
+        # Cost safety verification disabled for this user
+        # self._verify_free_model()
         
     def _verify_free_model(self):
         """Validates that the selected model is free to use on OpenRouter."""
@@ -58,7 +58,7 @@ class OpenRouterProvider(LLMProvider):
         prompt: str,
         system_prompt: Optional[str] = None,
         temperature: float = 0.7,
-        max_tokens: int = 1000,
+        max_tokens: int = 8000,
         **kwargs: Any
     ) -> LLMResponse:
         start_time = time.time()

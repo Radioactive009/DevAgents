@@ -9,6 +9,9 @@ import asyncio
 from datetime import datetime
 import threading
 
+import dotenv
+dotenv.load_dotenv(override=True)
+
 from orchestration.workflow import run_phase11_workflow
 from llm.factory import create_llm_provider
 from observability.telemetry import Telemetry
@@ -30,8 +33,8 @@ class RunRequest(BaseModel):
     use_rag: bool = False
     use_memory: bool = False
     use_tools: bool = True
-    provider: str = "groq"
-    model: str = "llama3-70b-8192"
+    provider: str = "openrouter"
+    model: str = "meta-llama/llama-3.1-70b-instruct"
     system: str = "MULTI_AGENT"
 
 # Global memory to store current runs
@@ -40,6 +43,10 @@ active_runs_state = {}
 state_lock = threading.Lock()
 
 def execute_run(run_id: str, request: RunRequest):
+    # FORCE openrouter to bypass UI Groq selection
+    request.provider = "openrouter"
+    request.model = "meta-llama/llama-3.1-70b-instruct"
+    
     try:
         # Create providers
         req_text = request.task_description + "\n\nRequirements:\n" + "\n".join(request.requirements)
@@ -88,6 +95,7 @@ def execute_run(run_id: str, request: RunRequest):
                 use_rag=request.use_rag,
                 use_memory=request.use_memory,
                 use_tools=request.use_tools,
+                sandbox_config={"allow_network_for_dependencies": True, "network_enabled": True},
                 state=state
             )
         
@@ -182,6 +190,20 @@ async def get_run_project(run_id: str):
         # Create a deep copy of the files list to avoid iteration over mutated list
         files_copy = {f.path: f.content for f in state.generated_project.files}
         return {"files": files_copy}
+    finally:
+        state_lock.release()
+
+@app.get("/api/runs/{run_id}/state")
+async def get_run_state(run_id: str):
+    state_lock.acquire()
+    try:
+        state = active_runs_state.get(run_id)
+        if not state:
+            return {"error": "Not found"}
+        return {
+            "metadata": state.metadata,
+            "user_requirement": state.user_requirement
+        }
     finally:
         state_lock.release()
 

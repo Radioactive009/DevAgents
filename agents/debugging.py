@@ -88,51 +88,52 @@ class DebuggingAgent(Agent):
                     response_latency = response.latency_seconds
                     response_tokens = response.total_tokens
                     
-                    # Validation checks
-                    self._validate_patch(patch, state)
-                    
-                    # Apply changes to state's generated_project
-                    self._apply_patch(patch, state)
-                    
-                    debug_result = DebugResult(
-                        success=True,
-                        agent_name=self.name,
-                        root_cause=patch.root_cause,
-                        failure_category=patch.failure_category,
-                        affected_files=[c.path for c in patch.changes],
-                        changes=patch.changes,
-                        reasoning_summary=patch.explanation,
-                        requirement_ids=list(set(req for c in patch.changes for req in c.requirement_ids)),
-                        debug_iteration=iteration,
-                        previous_test_status=state.test_result.status,
-                        provider=response_provider,
-                        model=response_model,
-                        latency=response_latency,
-                        token_usage=response_tokens
-                    )
-                    
-                    # Record history
-                    state.debugging_history.append({
-                        "iteration": iteration,
-                        "failure_category": patch.failure_category,
-                        "root_cause": patch.root_cause,
-                        "files_changed": debug_result.affected_files,
-                        "test_status_before": state.test_result.status,
-                        "model": response_model,
-                        "token_usage": response_tokens
-                    })
+                # Validation checks
+                self._validate_patch(patch, state)
+                
+                # Apply changes to state's generated_project
+                self._apply_patch(patch, state)
+                
+                debug_result = DebugResult(
+                    success=True,
+                    agent_name=self.name,
+                    root_cause=patch.root_cause,
+                    failure_category=patch.failure_category,
+                    affected_files=[c.path for c in patch.changes],
+                    changes=patch.changes,
+                    reasoning_summary=patch.explanation,
+                    requirement_ids=list(set(req for c in patch.changes for req in c.requirement_ids)),
+                    debug_iteration=iteration,
+                    previous_test_status=state.test_result.status,
+                    provider=response_provider,
+                    model=response_model,
+                    latency=response_latency,
+                    token_usage=response_tokens
+                )
+                
+                # Record history
+                state.debugging_history.append({
+                    "iteration": iteration,
+                    "failure_category": patch.failure_category,
+                    "root_cause": patch.root_cause,
+                    "files_changed": debug_result.affected_files,
+                    "test_status_before": state.test_result.status,
+                    "model": response_model,
+                    "token_usage": response_tokens
+                })
 
-                    return self._create_result(
-                        success=True,
-                        run_id=state.run_id,
-                        output=debug_result,
-                        raw_response_available=True,
-                        provider_name=response_provider,
-                        model_name=response_model,
-                        latency=response_latency,
-                        token_usage=response_tokens
-                    )
+                return self._create_result(
+                    success=True,
+                    run_id=state.run_id,
+                    output=debug_result,
+                    raw_response_available=True,
+                    provider_name=response_provider,
+                    model_name=response_model,
+                    latency=response_latency,
+                    token_usage=response_tokens
+                )
             except Exception as e:
+                print(f"DEBUG EXCEPTION: {e}", flush=True)
                 # Catch both parsing/validation errors and general API errors
                 if attempt == self.max_retries - 1:
                     error_category = getattr(e, "error_category", "LLM_ERROR")

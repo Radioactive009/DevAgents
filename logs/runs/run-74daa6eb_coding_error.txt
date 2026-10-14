@@ -1,0 +1,45 @@
+Unterminated string starting at: line 42 column 34 (char 4090)
+
+Raw output:
+
+
+{
+  "project_name": "Simple Calculator Project",
+  "files": [
+    {
+      "path": "calculator.py",
+      "content": "import argparse\nimport operator\nfrom input_validator import InputValidator\nfrom result_display import ResultDisplay\n\nclass Calculator:\n    def __init__(self):\n        self.input_validator = InputValidator()\n        self.result_display = ResultDisplay()\n\n    def calculate(self, operation, num1, num2):\n        if self.input_validator.validate_input(num1, num2):\n            if operation == 'add':\n                result = operator.add(num1, num2)\n            elif operation == 'subtract':\n                result = operator.sub(num1, num2)\n            elif operation == 'multiply':\n                result = operator.mul(num1, num2)\n            elif operation == 'divide':\n                result = operator.truediv(num1, num2)\n            self.result_display.display_result(result)\n        else:\n            print('Invalid input')\n\nif __name__ == '__main__':\n    parser = argparse.ArgumentParser(description='Simple Calculator')\n    parser.add_argument('--operation', type=str, help='Operation to perform', choices=['add', 'subtract', 'multiply', 'divide'])\n    parser.add_argument('--num1', type=float, help='First number')\n    parser.add_argument('--num2', type=float, help='Second number')\n    args = parser.parse_args()\n    calculator = Calculator()\n    calculator.calculate(args.operation, args.num1, args.num2)",
+      "description": "Calculator class that performs arithmetic operations",
+      "requirement_ids": ["REQ-001", "REQ-002", "REQ-003", "REQ-004", "REQ-006"]
+    },
+    {
+      "path": "input_validator.py",
+      "content": "class InputValidator:\n    def __init__(self):\n        pass\n\n    def validate_input(self, num1, num2):\n        if isinstance(num1, (int, float)) and isinstance(num2, (int, float)):\n            return True\n        else:\n            return False",
+      "description": "InputValidator class that validates user input",
+      "requirement_ids": ["REQ-005"]
+    },
+    {
+      "path": "result_display.py",
+      "content": "class ResultDisplay:\n    def __init__(self):\n        pass\n\n    def display_result(self, result):\n        print(f'Result: {result}')",
+      "description": "ResultDisplay class that displays the result of the operation",
+      "requirement_ids": ["REQ-006"]
+    },
+    {
+      "path": "requirements.txt",
+      "content": "argparse",
+      "description": "Dependencies file",
+      "requirement_ids": []
+    },
+    {
+      "path": "test_calculator.py",
+      "content": "import unittest\nfrom calculator import Calculator\nfrom input_validator import InputValidator\nfrom result_display import ResultDisplay\n\nclass TestCalculator(unittest.TestCase):\n    def test_addition(self):\n        calculator = Calculator()\n        result = calculator.calculate('add', 2, 2)\n        self.assertEqual(result, 4)\n\n    def test_subtraction(self):\n        calculator = Calculator()\n        result = calculator.calculate('subtract', 4, 2)\n        self.assertEqual(result, 2)\n\n    def test_multiplication(self):\n        calculator = Calculator()\n        result = calculator.calculate('multiply', 2, 2)\n        self.assertEqual(result, 4)\n\n    def test_division(self):\n        calculator = Calculator()\n        result = calculator.calculate('divide', 4, 2)\n        self.assertEqual(result, 2)\n\n    def test_input_validation(self):\n        input_validator = InputValidator()\n        self.assertTrue(input_validator.validate_input(2, 2))\n        self.assertFalse(input_validator.validate_input('a', 2))\n\nif __name__ == '__main__':\n    unittest.main()",
+      "description": "Unit tests for the calculator",
+      "requirement_ids": ["REQ-001", "REQ-002", "REQ-003", "REQ-004", "REQ-005", "REQ-006"]
+    }
+  ],
+  "entrypoint": "calculator.py",
+  "run_command": "python calculator.py --operation add --num1 2 --num2 2",
+  "test_command": "python test_calculator.py",
+  "dependencies": ["argparse"],
+  "requirement_coverage": {
+    "REQ-001": ["calculator.py", "test_calculator.py

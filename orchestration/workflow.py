@@ -328,6 +328,8 @@ def run_phase11_workflow(
         telemetry.record_agent(AgentEvent(run_id=run_id, agent_name="CodingAgent", phase="coding", duration_ms=(time.time()-start_t)*1000, success=res.success))
         if not res.success:
             state.metadata["coding_error"] = res.error_message
+            with open(f"logs/runs/{run_id}_coding_error.txt", "w") as f:
+                f.write(str(res.error_message) + "\n\nRaw output:\n" + str(res.output))
             telemetry.end_run(run_id, False, "CODING_FAILED")
             return state
 
