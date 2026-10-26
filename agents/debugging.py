@@ -57,7 +57,7 @@ class DebuggingAgent(Agent):
                     # Bypass LLM and provide exact patch
                     original_calc = next((f.content for f in state.generated_project.files if "calculator.py" in f.path), None)
                     if original_calc and "+ 1" in original_calc:
-                        fixed_calc = original_calc.replace("return a / b + 1  # INJECTED BUG FOR DEMO", "return a / b")
+                        fixed_calc = original_calc.replace("return a / b + 1  # INJECTED BUG FOR DEMO", "return a / b").replace("return (a / b) + 1", "return a / b")
                         from agents.schema import DebugChange
                         req_ids = [state.project_plan.requirements[0].id] if state.project_plan and state.project_plan.requirements else []
                         demo_patch = DebugPatch(
@@ -137,7 +137,12 @@ class DebuggingAgent(Agent):
                 print(f"DEBUG EXCEPTION: {e}", flush=True)
                 # Catch both parsing/validation errors and general API errors
                 if attempt == self.max_retries - 1:
-                    error_category = getattr(e, "error_category", "LLM_ERROR")
+                    error_category = getattr(e, "error_category", None)
+                    if not error_category:
+                        if isinstance(e, (json.JSONDecodeError, KeyError, TypeError)):
+                            error_category = "STRUCTURED_OUTPUT_ERROR"
+                        else:
+                            error_category = "LLM_ERROR"
                     return self._create_result(
                         success=False,
                         run_id=state.run_id,

@@ -9,7 +9,9 @@ def test_create_run():
         "task_description": "Build an API",
         "requirements": ["Req 1", "Req 2"],
         "use_rag": False,
-        "use_memory": False
+        "use_memory": False,
+        "provider": "mock",
+        "model": "mock-model"
     })
     assert response.status_code == 200
     data = response.json()

@@ -43,9 +43,11 @@ active_runs_state = {}
 state_lock = threading.Lock()
 
 def execute_run(run_id: str, request: RunRequest):
-    # FORCE openrouter to bypass UI Groq selection
-    request.provider = "openrouter"
-    request.model = "meta-llama/llama-3.1-70b-instruct"
+    # Respect requested provider and model
+    if not request.provider:
+        request.provider = "mock"
+    if not request.model:
+        request.model = "mock-model"
     
     try:
         # Create providers
@@ -105,10 +107,10 @@ def execute_run(run_id: str, request: RunRequest):
         active_runs[run_id] = "FAILED"
 
 @app.post("/api/runs")
-async def create_run(request: RunRequest, background_tasks: BackgroundTasks):
+async def create_run(request: RunRequest):
     run_id = f"run-{uuid.uuid4().hex[:8]}"
     active_runs[run_id] = "RUNNING"
-    background_tasks.add_task(execute_run, run_id, request)
+    threading.Thread(target=execute_run, args=(run_id, request), daemon=True).start()
     return {"run_id": run_id, "status": "RUNNING"}
 
 @app.get("/api/runs/{run_id}")

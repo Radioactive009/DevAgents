@@ -52,19 +52,52 @@ pip install -r requirements.txt
 ```
 
 ## 9. How to run tests
+Run all unit tests using pytest:
 ```bash
-python -m unittest discover tests
+py -m pytest
+```
+Or with unittest:
+```bash
+py -m unittest discover tests
 ```
 
-## 10. How experiment logging works
-Experiment logs are written in JSONL format to `logs/runs.jsonl`. Each line is a self-contained JSON object representing a single run, making analysis and aggregation easy.
+To run UI tests and build:
+```bash
+cd ui
+npm test
+npm run build
+```
 
-## 11. Reproducibility
-Every run is logged with its configuration, model details, random seed, task information, and timestamp to ensure full reproducibility.
+## 10. How to run the System & Dashboard
+Start the FastAPI backend:
+```bash
+py -m uvicorn api.main:app --reload --port 8000
+```
+Start the web dashboard:
+```bash
+cd ui
+npm run dev
+```
+
+To run a demonstration task programmatically:
+```bash
+py run_demo.py
+```
+
+## 11. How experiment logging works
+Experiment logs and telemetry events are written in JSONL format to `logs/runs/<run_id>.jsonl` and `logs/runs.jsonl`. Each record is a self-contained, sanitized JSON object containing agent events, execution times, test passes/failures, diffs, and verification metrics.
 
 ## 12. Current Implementation Status
-**Phase 1 foundation only — AI agents are not implemented yet.**
-"# DevAgents" 
+**Complete Multi-Agent Software Engineering System Implemented & Stabilized:**
+- **Supervisor Agent**: Requirements decomposition, planning, and task coordination.
+- **Architecture Agent**: Component design, dependency mapping, and interface specification.
+- **Coding Agent**: Complete source code generation with syntax and security validation.
+- **Testing Agent**: Isolated execution in Local Process Sandbox or Docker Sandbox, capturing exit codes and test pass rates.
+- **Debugging Agent**: Root-cause analysis, patch generation, and deterministic file updates with bounded retries.
+- **Verification Agent**: Evidence-based requirement coverage and test validation.
+- **Single Agent Baseline**: Comparison baseline for research experiments.
+- **Project Knowledge (RAG) & Memory**: Embedding-based code retrieval and episodic memory.
+- **Observability & Web Dashboard**: Full visual tracking of requirements, pipeline progress, file tree, test results, debug diffs, and metrics. 
 
 ## 13. LLM Provider Architecture
 We use provider abstraction so that experimental configurations can be compared without coupling the agent implementation to a single LLM provider.

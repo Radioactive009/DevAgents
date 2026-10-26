@@ -20,33 +20,22 @@ class TestFoundation(unittest.TestCase):
         self.assertIn("configuration", config)
         self.assertIn("models", config)
 
-    def test_experiment_runner(self):
-        config = {
-            "experiment_name": "test_exp",
-            "configuration": "SINGLE_AGENT_BASELINE",
-            "llm_provider": "mock",
-            "llm_model": "mock-model"
-        }
-        
+    def test_telemetry_logger(self):
+        from observability.logger import TelemetryLogger
         log_dir = os.path.join(os.path.dirname(__file__), "test_logs")
-        logger = ExperimentLogger(log_dir=log_dir)
-        runner = ExperimentRunner(config=config, logger=logger)
+        logger = TelemetryLogger(log_dir=log_dir)
         
-        task = {"id": "task_1"}
-        result = runner.run_experiment(task)
+        event = {"run_id": "test_run_1", "event_type": "TEST", "data": "value"}
+        logger.write_event(event)
         
-        self.assertIn("run_id", result)
-        self.assertEqual(result["experiment_id"], "test_exp")
-        
-        # Verify JSONL logging
-        log_file = os.path.join(log_dir, "runs.jsonl")
+        log_file = os.path.join(log_dir, "test_run_1.jsonl")
         self.assertTrue(os.path.exists(log_file))
         
         with open(log_file, "r") as f:
             lines = f.readlines()
             self.assertGreater(len(lines), 0)
             last_record = json.loads(lines[-1])
-            self.assertEqual(last_record["run_id"], result["run_id"])
+            self.assertEqual(last_record["run_id"], "test_run_1")
             
         # Cleanup
         if os.path.exists(log_file):

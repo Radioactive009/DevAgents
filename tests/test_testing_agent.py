@@ -43,6 +43,10 @@ class MockSandbox:
 
 class TestTestingAgent(unittest.TestCase):
     def setUp(self):
+        self.docker_avail_patch = patch("agents.testing.check_docker_available", return_value=True)
+        self.docker_avail_patch.start()
+        self.addCleanup(self.docker_avail_patch.stop)
+        
         self.provider = MockLLMProvider()
         self.agent = TestingAgent(self.provider, sandbox_config={"allow_network_for_dependencies": True})
         self.state = ProjectState(run_id="run-1", user_requirement="test")

@@ -29,6 +29,8 @@ class VerificationAgent(Agent):
             failed_checks.append("Test result does not exist.")
         elif state.test_result.exit_code is None:
             failed_checks.append("Test exit code is not available.")
+        elif state.test_result.status != "PASSED" or state.test_result.exit_code != 0:
+            failed_checks.append(f"Tests failed: status={state.test_result.status}, exit_code={state.test_result.exit_code}")
             
         # Build prompt context
         context_builder = ContextBuilder()
@@ -114,9 +116,12 @@ class VerificationAgent(Agent):
             })
             
             if failed_checks and result.status == "VERIFIED":
-                result.status = "PARTIALLY_VERIFIED"
+                if state.test_result and (state.test_result.status != "PASSED" or state.test_result.exit_code != 0):
+                    result.status = "FAILED"
+                else:
+                    result.status = "PARTIALLY_VERIFIED"
                 result.verified = False
-                result.warnings.append("Demoted to PARTIALLY_VERIFIED due to failing deterministic checks.")
+                result.warnings.append("Demoted due to failing deterministic checks or failed test execution.")
                 
             state.verification_result = result
             return self._create_result(

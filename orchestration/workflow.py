@@ -427,9 +427,17 @@ def run_single_agent_workflow(
     try:
         state = ProjectState(run_id=run_id, user_requirement=user_requirement)
         
+        from execution.docker_sandbox import DockerSandbox, check_docker_available
+        from execution.local_sandbox import LocalProcessSandbox
+        
         # Determine sandbox
-        sandbox = sandbox_override if sandbox_override else DockerSandbox(sandbox_config)
-        if not sandbox_override:
+        if sandbox_override:
+            sandbox = sandbox_override
+        elif check_docker_available() and sandbox_config and sandbox_config.get("use_docker", True):
+            sandbox = DockerSandbox(sandbox_config or {})
+            sandbox.create_workspace()
+        else:
+            sandbox = LocalProcessSandbox(sandbox_config or {})
             sandbox.create_workspace()
         state.sandbox = sandbox
         
