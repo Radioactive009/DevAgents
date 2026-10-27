@@ -378,7 +378,7 @@ def run_phase11_workflow(
 
         if state.generated_project:
             try:
-                import json, dataclasses
+                import os, json, dataclasses
                 os.makedirs("logs/runs", exist_ok=True)
                 with open(f"logs/runs/{run_id}_project.json", "w", encoding="utf-8") as pf:
                     json.dump(dataclasses.asdict(state.generated_project), pf, indent=2)
@@ -400,37 +400,49 @@ def run_phase11_workflow(
         ))
 
         # Check if test execution failed due to unrecoverable infrastructure/sandbox failure
-        if not test_res.success and (state.test_result is None or state.test_result.status in ["SANDBOX_ERROR", "ERROR"] and state.test_result.failure_category in ["SANDBOX_ERROR", "DOCKER_ERROR"]):
+        is_dep_error = state.test_result and (
+            state.test_result.status in ["DEPENDENCY_INSTALLATION_FAILED", "ENVIRONMENT_ERROR"] or 
+            state.test_result.failure_category in ["DEPENDENCY_INSTALLATION_FAILED", "ENVIRONMENT_ERROR"]
+        )
+        is_infra_error = not test_res.success and (
+            state.test_result is None or 
+            state.test_result.status in ["SANDBOX_ERROR", "ERROR"] or 
+            (state.test_result and state.test_result.failure_category in ["SANDBOX_ERROR", "DOCKER_ERROR"])
+        )
+
+        if is_infra_error and not is_dep_error:
             state.metadata["testing_error"] = test_res.error_message or "Testing failed due to infrastructure error"
             telemetry.end_run(run_id, False, "INFRASTRUCTURE_ERROR")
             return state
 
         iterations = 0
-        while iterations < max_debug_iterations:
-            # If tests exist and are PASSED, exit loop
-            if state.test_result and state.test_result.status == "PASSED":
-                break
+        # If failure was due to missing system runtime/npm dependencies, skip futile code debugging cycles
+        if not is_dep_error:
+            while iterations < max_debug_iterations:
+                # If tests exist and are PASSED, exit loop
+                if state.test_result and state.test_result.status == "PASSED":
+                    break
 
-            start_d = time.time()
-            debug_res = debug_agent.run(state)
-            telemetry.record_debug(DebugEvent(run_id=run_id, iteration=iterations+1, success=debug_res.success, duration_ms=(time.time()-start_d)*1000, agent_name="DebuggingAgent"))
-            
-            if not debug_res.success:
-                state.metadata["debugging_error"] = debug_res.error_message
-                break
+                start_d = time.time()
+                debug_res = debug_agent.run(state)
+                telemetry.record_debug(DebugEvent(run_id=run_id, iteration=iterations+1, success=debug_res.success, duration_ms=(time.time()-start_d)*1000, agent_name="DebuggingAgent"))
                 
-            start_t = time.time()
-            test_res = test_agent.run(state)
-            iterations += 1
-            telemetry.record_test(TestEvent(
-                run_id=run_id, duration_ms=(time.time()-start_t)*1000, success=test_res.success,
-                exit_code=getattr(state.test_result, "exit_code", None),
-                test_pass_rate=(state.test_result.tests_passed / max(1, state.test_result.tests_total)) if state.test_result and state.test_result.tests_total else 0.0
-            ))
-            
-            if not test_res.success and (state.test_result is None or state.test_result.status == "ERROR"):
-                state.metadata["testing_error"] = test_res.error_message
-                break
+                if not debug_res.success:
+                    state.metadata["debugging_error"] = debug_res.error_message
+                    break
+                    
+                start_t = time.time()
+                test_res = test_agent.run(state)
+                iterations += 1
+                telemetry.record_test(TestEvent(
+                    run_id=run_id, duration_ms=(time.time()-start_t)*1000, success=test_res.success,
+                    exit_code=getattr(state.test_result, "exit_code", None),
+                    test_pass_rate=(state.test_result.tests_passed / max(1, state.test_result.tests_total)) if state.test_result and state.test_result.tests_total else 0.0
+                ))
+                
+                if not test_res.success and (state.test_result is None or state.test_result.status == "ERROR"):
+                    state.metadata["testing_error"] = test_res.error_message
+                    break
 
         # Verification
         from agents.verification import VerificationAgent

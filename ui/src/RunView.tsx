@@ -163,13 +163,17 @@ export default function RunView() {
   const errorEvent = events.slice().reverse().find(e => e.event_type === 'error' || e.error_message || (e.event_type === 'agent' && e.success === false));
   const eventError = errorEvent ? (errorEvent.message || errorEvent.error_message || errorEvent.error_info || errorEvent.action) : null;
 
-  const errorMessage = runInfo?.error || 
+  const isRunning = runInfo?.status === 'RUNNING';
+
+  const errorMessage = !isRunning ? (
+    runInfo?.error || 
     runState?.metadata?.coding_error || 
     runState?.metadata?.supervisor_error || 
     runState?.metadata?.architecture_error || 
     runState?.metadata?.testing_error || 
     eventError ||
-    (runInfo?.status === 'FAILED' || runInfo?.final_status === 'ERROR' ? (runInfo?.final_status || 'Pipeline execution encountered a failure.') : null);
+    (runInfo?.status === 'FAILED' || runInfo?.final_status === 'ERROR' ? (runInfo?.final_status || 'Pipeline execution encountered a failure.') : null)
+  ) : null;
 
   return (
     <div className="space-y-6 max-w-7xl mx-auto">

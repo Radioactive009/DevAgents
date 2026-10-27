@@ -107,13 +107,13 @@ def execute_run(run_id: str, request: RunRequest):
         
         telemetry = Telemetry.get_instance()
         record = telemetry.runs.get(run_id)
-        if record and getattr(record, "final_status", "") in ["SUPERVISOR_FAILED", "ARCHITECTURE_FAILED", "CODING_FAILED", "INFRASTRUCTURE_ERROR", "HUMAN_APPROVAL_REJECTED"]:
+        if record and (not getattr(record, "success", True) or getattr(record, "final_status", "") in ["SUPERVISOR_FAILED", "ARCHITECTURE_FAILED", "CODING_FAILED", "INFRASTRUCTURE_ERROR", "HUMAN_APPROVAL_REJECTED", "ERROR"]):
             active_runs[run_id] = "FAILED"
             run_errors[run_id] = (state.metadata.get("coding_error") or 
                                   state.metadata.get("architecture_error") or 
                                   state.metadata.get("supervisor_error") or 
                                   state.metadata.get("testing_error") or 
-                                  f"Workflow halted at phase: {record.final_status}")
+                                  f"Workflow halted with status: {record.final_status}")
         else:
             active_runs[run_id] = "COMPLETED"
     except Exception as e:
@@ -138,15 +138,18 @@ async def get_run(run_id: str):
     
     record = telemetry.runs.get(run_id)
     err = run_errors.get(run_id)
-    if not err and record and getattr(record, "final_status", "") in ["SUPERVISOR_FAILED", "ARCHITECTURE_FAILED", "CODING_FAILED", "INFRASTRUCTURE_ERROR", "HUMAN_APPROVAL_REJECTED"]:
-        state = active_runs_state.get(run_id)
-        if state:
-            err = (state.metadata.get("coding_error") or 
-                   state.metadata.get("architecture_error") or 
-                   state.metadata.get("supervisor_error") or 
-                   state.metadata.get("testing_error"))
+    if status == "FAILED" or (status != "RUNNING" and record and getattr(record, "final_status", "") in ["SUPERVISOR_FAILED", "ARCHITECTURE_FAILED", "CODING_FAILED", "INFRASTRUCTURE_ERROR", "HUMAN_APPROVAL_REJECTED", "ERROR"]):
         if not err:
-            err = f"Pipeline halted with status: {record.final_status}"
+            state = active_runs_state.get(run_id)
+            if state:
+                err = (state.metadata.get("coding_error") or 
+                       state.metadata.get("architecture_error") or 
+                       state.metadata.get("supervisor_error") or 
+                       state.metadata.get("testing_error"))
+            if not err and getattr(record, "final_status", None):
+                err = f"Pipeline halted with status: {record.final_status}"
+    elif status == "RUNNING":
+        err = None
             
     if record:
         return {
@@ -211,15 +214,25 @@ async def list_runs():
         })
     return {"runs": list(reversed(runs))}
 
+def get_file_map_for_run(run_id: str) -> dict:
+    state = active_runs_state.get(run_id)
+    if state and state.generated_project:
+        return {f.path.replace("\\", "/"): f.content for f in state.generated_project.files}
+    disk_path = f"logs/runs/{run_id}_project.json"
+    if os.path.exists(disk_path):
+        try:
+            with open(disk_path, "r", encoding="utf-8") as pf:
+                data = json.load(pf)
+                return {f["path"].replace("\\", "/"): f["content"] for f in data.get("files", [])}
+        except:
+            pass
+    return {}
+
 @app.get("/api/runs/{run_id}/project")
 async def get_run_project(run_id: str):
     state_lock.acquire()
     try:
-        state = active_runs_state.get(run_id)
-        if not state or not state.generated_project:
-            return {"files": {}}
-        # Create a deep copy of the files list to avoid iteration over mutated list
-        files_copy = {f.path: f.content for f in state.generated_project.files}
+        files_copy = get_file_map_for_run(run_id)
         return {"files": files_copy}
     finally:
         state_lock.release()
@@ -286,11 +299,10 @@ async def get_run_state(run_id: str):
 async def get_preview_status(run_id: str):
     state_lock.acquire()
     try:
-        state = active_runs_state.get(run_id)
-        if not state or not state.generated_project:
+        file_map = get_file_map_for_run(run_id)
+        if not file_map:
             return {"has_preview": False, "status": "NO_PROJECT"}
         
-        file_map = {f.path.replace("\\", "/"): f.content for f in state.generated_project.files}
         html_files = [p for p in file_map if p.endswith(".html")]
         if not html_files:
             return {"has_preview": False, "status": "NO_HTML_ENTRYPOINT"}
@@ -310,11 +322,10 @@ async def get_preview_status(run_id: str):
 async def get_preview_file(run_id: str, file_path: str):
     state_lock.acquire()
     try:
-        state = active_runs_state.get(run_id)
-        if not state or not state.generated_project:
+        file_map = get_file_map_for_run(run_id)
+        if not file_map:
             raise HTTPException(status_code=404, detail="Run project not found")
         
-        file_map = {f.path.replace("\\", "/"): f.content for f in state.generated_project.files}
         clean_path = file_path.strip("/").replace("\\", "/")
         
         # If empty or root, look for standard HTML entrypoints
