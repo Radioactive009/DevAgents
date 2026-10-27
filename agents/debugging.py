@@ -199,7 +199,7 @@ class DebuggingAgent(Agent):
             memory_records = records
             state.memory_metadata['last_retrieval'] = {'query': query, 'latency': latency, 'records': [r.memory_id for r in records]}
             
-        context_builder = ContextBuilder()
+        context_builder = ContextBuilder(max_context_size=12000)
         safe_context = context_builder.build_context(
             task_info=task_info,
             test_result=dataclasses.asdict(state.test_result),
@@ -208,7 +208,7 @@ class DebuggingAgent(Agent):
             memory_records=memory_records
         )
         
-        return safe_context + "\\n\\nProvide the exact DebugPatch JSON to fix the failure."
+        return safe_context + "\n\nProvide the exact DebugPatch JSON to fix the failure."
     def _validate_patch(self, patch: DebugPatch, state: ProjectState):
         valid_req_ids = set()
         if state.project_plan:
