@@ -4,6 +4,10 @@ Runs the complete autonomous development lifecycle and prints real-time agent ou
 """
 import sys
 import time
+import argparse
+import dotenv
+dotenv.load_dotenv(override=True)
+
 if sys.platform == "win32":
     try:
         sys.stdout.reconfigure(encoding="utf-8")
@@ -11,21 +15,28 @@ if sys.platform == "win32":
         pass
 
 from orchestration.workflow import run_phase11_workflow
-from llm.base import MockLLMProvider
+from llm.factory import create_llm_provider
 
 def main():
+    parser = argparse.ArgumentParser(description="DevAgents Autonomous Multi-Agent CLI Demo")
+    parser.add_argument("--provider", type=str, default="mock", help="LLM Provider (mock, groq, openrouter, gemini)")
+    parser.add_argument("--model", type=str, default=None, help="LLM Model Name")
+    parser.add_argument("--requirement", type=str, default=None, help="Custom requirement prompt")
+    args = parser.parse_args()
+
     print("=" * 60)
     print("DEVAGENTS -- AUTONOMOUS MULTI-AGENT DEVELOPMENT DEMO")
+    print(f"Provider: {args.provider.upper()} | Model: {args.model or 'default'}")
     print("=" * 60)
     
-    requirement = (
+    requirement = args.requirement or (
         "Build a Python calculator module with add, subtract, multiply, "
         "divide, division-by-zero handling, and pytest tests."
     )
     print(f"\nUser Requirement:\n   \"{requirement}\"\n")
     print("Coordinating agents: Supervisor -> Architecture -> Coding -> Testing -> Debugging -> Verification...\n")
     
-    provider = MockLLMProvider()
+    provider = create_llm_provider({"provider": args.provider, "model": args.model})
     run_id = f"demo-run-{int(time.time())}"
     
     state = run_phase11_workflow(

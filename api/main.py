@@ -102,6 +102,8 @@ def execute_run(run_id: str, request: RunRequest):
         active_runs[run_id] = "COMPLETED"
     except Exception as e:
         print(f"Run failed: {e}")
+        import traceback
+        traceback.print_exc()
         active_runs[run_id] = "FAILED"
 
 @app.post("/api/runs")
