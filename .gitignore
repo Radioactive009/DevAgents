@@ -1,8 +1,14 @@
 .env
+.env.*
+!.env.example
 logs/runs.jsonl
 logs/runs/*.jsonl
+logs/runs/*_deployment.json
+logs/runs/*_project.json
 __pycache__/
 *.pyc
 tmp_workspaces/
 tmp_eval_workspaces/
 experiment_results/
+dist/
+node_modules/

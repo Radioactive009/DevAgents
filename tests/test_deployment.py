@@ -83,6 +83,8 @@ def test_github_publish_project_private_by_default(tmp_path):
         commands_run.append(cmd_str)
         if "gh auth status" in cmd_str:
             return 0, "Logged in to github.com account Radioactive009", ""
+        if "gh repo view" in cmd_str:
+            return 1, "", "Could not resolve to a Repository"
         if "git rev-parse" in cmd_str:
             return 0, "mock-commit-sha-abcdef", ""
         return 0, "", ""
@@ -113,6 +115,8 @@ def test_github_publish_fails_cleanly_on_git_error(tmp_path):
         cmd_str = " ".join(cmd)
         if "gh auth status" in cmd_str:
             return 0, "Logged in to github.com account Radioactive009", ""
+        if "gh repo view" in cmd_str:
+            return 1, "", "Could not resolve to a Repository"
         if "gh repo create" in cmd_str:
             return 1, "", "fatal: repository creation failed: name already exists"
         return 0, "", ""
@@ -121,7 +125,7 @@ def test_github_publish_fails_cleanly_on_git_error(tmp_path):
     
     with pytest.raises(GitHubPublishingError) as exc_info:
         gh.publish_project("run-1234", "App", {"index.html": "<h1>Hi</h1>"})
-    assert "GitHub repository creation failed" in str(exc_info.value)
+    assert "Failed to create GitHub repository" in str(exc_info.value)
 
 # =====================================================================
 # 2. CI SERVICE TESTS
@@ -157,7 +161,7 @@ def test_ci_detect_project_types():
 def test_ci_workflow_generation_structure():
     ci = CIService()
     files = {
-        "package.json": '{"scripts": {"test": "jest", "build": "vite build"}}',
+        "package.json": '{"scripts": {"test": "npm test", "build": "npm run build"}}',
         "src/App.tsx": "export default () => <div>App</div>"
     }
     workflow = ci.generate_ci_workflow(files, project_name="my-frontend")
@@ -169,7 +173,7 @@ def test_ci_workflow_generation_structure():
     # Check steps
     assert "actions/checkout@v4" in workflow
     assert "actions/setup-node@v4" in workflow
-    assert "npm run test" in workflow
+    assert "npm test" in workflow
     assert "npm run build" in workflow
 
 def test_ci_workflow_python_structure():
@@ -253,7 +257,7 @@ def test_vercel_create_and_wait_deployment():
     assert dep.deployment_id == "dpl_abc123"
     assert dep.state == "BUILDING"
     
-    final_dep = vc.wait_for_deployment(dep.deployment_id, timeout_seconds=5, poll_interval_seconds=0.1)
+    final_dep = vc.wait_for_deployment(dep.deployment_id, timeout_seconds=5, poll_interval=0.1)
     assert final_dep.state == "READY"
     assert final_dep.deployment_url == "https://my-app-preview.vercel.app"
 
@@ -349,7 +353,7 @@ def test_api_deployment_endpoints(tmp_path):
     from fastapi.testclient import TestClient
     from api.main import app, active_runs_state
     from orchestration.state import ProjectState
-    from agents.schema import GeneratedProject, GeneratedFile
+    from agents.schema import GeneratedProject
     
     client = TestClient(app)
     
@@ -362,15 +366,17 @@ def test_api_deployment_endpoints(tmp_path):
     # Check that secrets are NEVER leaked in config responses
     assert "token" not in config_data.get("vercel", {})
     
-    # 2. Setup mock run with files
+    # 2. Setup mock run with files using from_dict
     run_id = "run-api-test"
     state = ProjectState(run_id=run_id, user_requirement="Build a counter app")
-    state.generated_project = GeneratedProject(
-        files=[
-            GeneratedFile(path="index.html", content="<h1>Counter</h1>"),
-            GeneratedFile(path="app.js", content="let count = 0;")
+    state.generated_project = GeneratedProject.from_dict({
+        "project_name": "Counter App",
+        "entrypoint": "index.html",
+        "files": [
+            {"path": "index.html", "content": "<h1>Counter</h1>"},
+            {"path": "app.js", "content": "let count = 0;"}
         ]
-    )
+    })
     active_runs_state[run_id] = state
     
     # 3. Test /api/runs/{run_id}/deploy with mock=True
