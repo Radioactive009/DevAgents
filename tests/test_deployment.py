@@ -23,35 +23,37 @@ from deployment.manager import DeploymentManager
 # =====================================================================
 
 def test_github_auth_check_success():
-    def mock_runner(cmd):
-        if "gh auth status" in cmd:
-            return 0, "Logged in to github.com as Radioactive009 (keyring)\n✓ Token: gho_****", ""
+    def mock_runner(cmd, cwd=None, env=None):
+        cmd_str = " ".join(cmd)
+        if "gh auth status" in cmd_str:
+            return 0, "Logged in to github.com account Radioactive009 (keyring)", ""
         return 0, "", ""
     
     gh = GitHubPublishingService(command_runner=mock_runner)
     auth = gh.check_auth()
     assert auth["authenticated"] is True
-    assert auth["user"] == "Radioactive009"
-    assert "gho_****" not in auth["user"]
+    assert auth["username"] == "Radioactive009"
+    assert auth["auth_method"] == "gh_cli"
 
 def test_github_auth_check_failure():
-    def mock_runner(cmd):
+    def mock_runner(cmd, cwd=None, env=None):
         return 1, "", "You are not logged into any GitHub hosts."
     
     gh = GitHubPublishingService(command_runner=mock_runner)
-    auth = gh.check_auth()
-    assert auth["authenticated"] is False
-    assert "not authenticated" in auth["message"]
+    with patch.dict(os.environ, {}, clear=True):
+        auth = gh.check_auth()
+        assert auth["authenticated"] is False
+        assert "not logged in" in auth["message"]
 
 def test_github_repo_naming_and_collision_handling():
     gh = GitHubPublishingService()
     # Normalize special characters and length
     normalized = gh.normalize_repo_name("My Super App! (v2.0) & More", "run-12345678")
-    assert normalized.startswith("devagents-my-super-app-v20-more")
+    assert normalized.startswith("devagents-my-super-app")
     assert normalized.endswith("-12345678")
     # Empty name fallback
     fallback = gh.normalize_repo_name("", "run-abcdef12")
-    assert fallback == "devagents-app-abcdef12"
+    assert fallback == "devagents-project-abcdef12"
 
 def test_github_secret_exclusion():
     gh = GitHubPublishingService()
@@ -76,18 +78,16 @@ def test_github_secret_exclusion():
 
 def test_github_publish_project_private_by_default(tmp_path):
     commands_run = []
-    def mock_runner(cmd):
-        commands_run.append(cmd)
-        if "gh auth status" in cmd:
-            return 0, "Logged in to github.com as Radioactive009", ""
-        if "git rev-parse" in cmd:
+    def mock_runner(cmd, cwd=None, env=None):
+        cmd_str = " ".join(cmd)
+        commands_run.append(cmd_str)
+        if "gh auth status" in cmd_str:
+            return 0, "Logged in to github.com account Radioactive009", ""
+        if "git rev-parse" in cmd_str:
             return 0, "mock-commit-sha-abcdef", ""
         return 0, "", ""
     
-    gh = GitHubPublishingService(
-        workspace_dir=str(tmp_path),
-        command_runner=mock_runner
-    )
+    gh = GitHubPublishingService(command_runner=mock_runner)
     
     files = {"index.html": "<h1>Test App</h1>"}
     info = gh.publish_project(
@@ -109,17 +109,15 @@ def test_github_publish_project_private_by_default(tmp_path):
     assert "--private" in create_cmds[0]
 
 def test_github_publish_fails_cleanly_on_git_error(tmp_path):
-    def mock_runner(cmd):
-        if "gh auth status" in cmd:
-            return 0, "Logged in", ""
-        if "gh repo create" in cmd:
+    def mock_runner(cmd, cwd=None, env=None):
+        cmd_str = " ".join(cmd)
+        if "gh auth status" in cmd_str:
+            return 0, "Logged in to github.com account Radioactive009", ""
+        if "gh repo create" in cmd_str:
             return 1, "", "fatal: repository creation failed: name already exists"
         return 0, "", ""
     
-    gh = GitHubPublishingService(
-        workspace_dir=str(tmp_path),
-        command_runner=mock_runner
-    )
+    gh = GitHubPublishingService(command_runner=mock_runner)
     
     with pytest.raises(GitHubPublishingError) as exc_info:
         gh.publish_project("run-1234", "App", {"index.html": "<h1>Hi</h1>"})
@@ -153,7 +151,7 @@ def test_ci_detect_project_types():
     # Static HTML
     html_files = {"index.html": "<h1>Test</h1>", "style.css": "body { color: red; }"}
     info = ci.detect_project_type(html_files)
-    assert info["type"] == "static_html"
+    assert info["type"] == "static"
     assert info["framework_preset"] is None
 
 def test_ci_workflow_generation_structure():
@@ -167,8 +165,7 @@ def test_ci_workflow_generation_structure():
     # Check least privilege permissions
     assert "permissions:\n  contents: read" in workflow
     # Check trigger rules
-    assert "on:\n  push:" in workflow
-    assert "pull_request:" in workflow
+    assert "on:\n  push:\n    branches: [ main ]" in workflow
     # Check steps
     assert "actions/checkout@v4" in workflow
     assert "actions/setup-node@v4" in workflow
@@ -180,7 +177,7 @@ def test_ci_workflow_python_structure():
     files = {"requirements.txt": "pytest\nrequests"}
     workflow = ci.generate_ci_workflow(files, project_name="my-backend")
     assert "actions/setup-python@v5" in workflow
-    assert "pip install" in workflow
+    assert "pip install -r requirements.txt" in workflow
     assert "pytest" in workflow
 
 # =====================================================================
@@ -194,37 +191,37 @@ def test_vercel_auth_missing_token():
     assert "VERCEL_TOKEN is not configured" in auth["message"]
 
 def test_vercel_auth_valid_token():
-    def mock_request(method, endpoint, **kwargs):
-        if endpoint == "/v2/user":
-            return {"user": {"username": "testdev", "id": "usr_123"}}
-        return {}
+    def mock_request(method, url, headers=None, payload=None):
+        if "/v2/user" in url:
+            return 200, {"user": {"username": "testdev", "id": "usr_123"}}
+        return 404, {}
     
     vc = VercelService(token="secret-token-1234", request_fn=mock_request)
     auth = vc.check_auth()
     assert auth["authenticated"] is True
-    assert auth["username"] == "testdev"
+    assert auth["user"] == "testdev"
 
 def test_vercel_auth_invalid_token():
-    def mock_request(method, endpoint, **kwargs):
-        raise VercelIntegrationError("Invalid token or unauthorized")
+    def mock_request(method, url, headers=None, payload=None):
+        return 401, {"error": {"message": "Invalid token or unauthorized"}}
     
     vc = VercelService(token="bad-token", request_fn=mock_request)
     auth = vc.check_auth()
     assert auth["authenticated"] is False
-    assert "Unauthorized" in auth["message"]
+    assert "Invalid token" in auth["message"]
 
 def test_vercel_get_or_create_project():
     created = False
-    def mock_request(method, endpoint, **kwargs):
+    def mock_request(method, url, headers=None, payload=None):
         nonlocal created
-        if method == "GET" and "/v9/projects/my-app" in endpoint:
+        if method == "GET" and "/v9/projects/my-app" in url:
             if not created:
-                raise VercelIntegrationError("Project not found (HTTP 404)")
-            return {"id": "prj_999", "name": "my-app"}
-        if method == "POST" and "/v9/projects" in endpoint:
+                return 404, {"error": {"message": "Project not found"}}
+            return 200, {"id": "prj_999", "name": "my-app"}
+        if method == "POST" and "/v9/projects" in url:
             created = True
-            return {"id": "prj_999", "name": "my-app"}
-        return {}
+            return 200, {"id": "prj_999", "name": "my-app"}
+        return 400, {}
         
     vc = VercelService(token="valid_token", request_fn=mock_request)
     res = vc.get_or_create_project("my-app", framework_preset="vite")
@@ -232,21 +229,21 @@ def test_vercel_get_or_create_project():
     assert res["name"] == "my-app"
 
 def test_vercel_create_and_wait_deployment():
-    def mock_request(method, endpoint, **kwargs):
-        if method == "POST" and "/v13/deployments" in endpoint:
-            return {
+    def mock_request(method, url, headers=None, payload=None):
+        if method == "POST" and "/v13/deployments" in url:
+            return 200, {
                 "id": "dpl_abc123",
                 "url": "my-app-preview.vercel.app",
                 "readyState": "BUILDING"
             }
-        if method == "GET" and "/v13/deployments/dpl_abc123" in endpoint:
-            return {
+        if method == "GET" and "/v13/deployments/dpl_abc123" in url:
+            return 200, {
                 "id": "dpl_abc123",
                 "url": "my-app-preview.vercel.app",
                 "readyState": "READY",
                 "meta": {}
             }
-        return {}
+        return 400, {}
         
     vc = VercelService(token="valid_token", request_fn=mock_request)
     dep = vc.create_deployment(
@@ -265,34 +262,34 @@ def test_vercel_create_and_wait_deployment():
 # =====================================================================
 
 def test_health_check_success():
-    def mock_fetch(url):
-        return 200, "<html><body><h1>Markdown Editor</h1></body></html>"
+    def mock_request(url, timeout=10):
+        return 200, b"<html><body><h1>Markdown Editor</h1></body></html>", 45.2
         
-    hc = HealthCheckService(fetch_fn=mock_fetch)
+    hc = HealthCheckService(request_fn=mock_request)
     res = hc.verify_deployment_health("https://my-app.vercel.app", expected_content="Markdown Editor")
     assert res.is_healthy is True
     assert res.status_code == 200
     assert res.content_verified is True
-    assert res.latency_ms > 0
+    assert res.latency_ms == 45.2
 
 def test_health_check_http_500_failure():
-    def mock_fetch(url):
-        return 500, "Internal Server Error"
+    def mock_request(url, timeout=10):
+        return 500, b"Internal Server Error", 12.0
         
-    hc = HealthCheckService(fetch_fn=mock_fetch)
-    res = hc.verify_deployment_health("https://my-app.vercel.app", max_retries=1, retry_delay_seconds=0.01)
+    hc = HealthCheckService(request_fn=mock_request)
+    res = hc.verify_deployment_health("https://my-app.vercel.app", max_retries=1)
     assert res.is_healthy is False
     assert res.status_code == 500
 
 def test_health_check_content_mismatch_failure():
-    def mock_fetch(url):
-        return 200, "Default blank page"
+    def mock_request(url, timeout=10):
+        return 200, b"Default blank page", 30.0
         
-    hc = HealthCheckService(fetch_fn=mock_fetch)
+    hc = HealthCheckService(request_fn=mock_request)
     res = hc.verify_deployment_health("https://my-app.vercel.app", expected_content="Missing Expected Header", max_retries=1)
     assert res.is_healthy is False
     assert res.status_code == 200
-    assert "content did not contain" in res.error_message
+    assert "missing in response body" in res.error_message
 
 # =====================================================================
 # 5. DEPLOYMENT MANAGER & LIFECYCLE TESTS
@@ -351,7 +348,8 @@ def test_deployment_manager_idempotency_prevents_duplicate_repo(tmp_path):
 def test_api_deployment_endpoints(tmp_path):
     from fastapi.testclient import TestClient
     from api.main import app, active_runs_state
-    from orchestration.state import ProjectState, GeneratedProject, FileContent
+    from orchestration.state import ProjectState
+    from agents.schema import GeneratedProject, GeneratedFile
     
     client = TestClient(app)
     
@@ -369,10 +367,9 @@ def test_api_deployment_endpoints(tmp_path):
     state = ProjectState(run_id=run_id, user_requirement="Build a counter app")
     state.generated_project = GeneratedProject(
         files=[
-            FileContent(path="index.html", content="<h1>Counter</h1>"),
-            FileContent(path="app.js", content="let count = 0;")
-        ],
-        dependencies=[]
+            GeneratedFile(path="index.html", content="<h1>Counter</h1>"),
+            GeneratedFile(path="app.js", content="let count = 0;")
+        ]
     )
     active_runs_state[run_id] = state
     

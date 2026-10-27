@@ -135,6 +135,18 @@ class GitHubPublishingService:
                 return False
         return True
 
+    @classmethod
+    def filter_sensitive_files(cls, files: Dict[str, str]) -> Tuple[Dict[str, str], List[str]]:
+        """Separate allowed files from prohibited sensitive files."""
+        allowed = {}
+        excluded = []
+        for path, content in files.items():
+            if cls.is_file_allowed(path):
+                allowed[path] = content
+            else:
+                excluded.append(path)
+        return allowed, excluded
+
     @staticmethod
     def normalize_repo_name(project_name: str, run_id: str) -> str:
         """Generate safe, collision-resistant repository name."""
