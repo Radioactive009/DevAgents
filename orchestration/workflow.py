@@ -329,7 +329,8 @@ def run_phase11_workflow(
                 phase="approval",
                 duration_ms=0,
                 success=True,
-                action="Awaiting human approval of architecture plan..."
+                action="Awaiting human approval of architecture plan...",
+                output_summary="Awaiting human approval of architecture plan..."
             ))
             approval_event = state.metadata.get("approval_event")
             if approval_event:
@@ -345,7 +346,8 @@ def run_phase11_workflow(
                         phase="approval",
                         duration_ms=0,
                         success=False,
-                        action=f"Architecture rejected or approval timed out. Feedback: {state.metadata.get('approval_feedback', 'None')}"
+                        action=f"Architecture rejected or approval timed out. Feedback: {state.metadata.get('approval_feedback', 'None')}",
+                        output_summary=f"Architecture rejected or approval timed out. Feedback: {state.metadata.get('approval_feedback', 'None')}"
                     ))
                     telemetry.end_run(run_id, False, "HUMAN_APPROVAL_REJECTED")
                     return state
@@ -357,7 +359,8 @@ def run_phase11_workflow(
                     phase="approval",
                     duration_ms=0,
                     success=True,
-                    action="Human approval granted. Proceeding to code generation."
+                    action="Human approval granted. Proceeding to code generation.",
+                    output_summary="Human approval granted. Proceeding to code generation."
                 ))
 
         # Coding
@@ -372,6 +375,15 @@ def run_phase11_workflow(
                 f.write(str(res.error_message) + "\n\nRaw output:\n" + str(res.output))
             telemetry.end_run(run_id, False, "CODING_FAILED")
             return state
+
+        if state.generated_project:
+            try:
+                import json, dataclasses
+                os.makedirs("logs/runs", exist_ok=True)
+                with open(f"logs/runs/{run_id}_project.json", "w", encoding="utf-8") as pf:
+                    json.dump(dataclasses.asdict(state.generated_project), pf, indent=2)
+            except Exception as pe:
+                print(f"Error persisting project: {pe}")
 
         # Testing & Debugging
         from agents.testing import TestingAgent

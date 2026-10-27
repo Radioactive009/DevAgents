@@ -32,6 +32,7 @@ class AgentEvent(BaseEvent):
     status: str = ""
     input_summary: str = ""
     output_summary: str = ""
+    action: str = ""
     provider: Optional[str] = None
     model: Optional[str] = None
     prompt_tokens: Optional[int] = None
