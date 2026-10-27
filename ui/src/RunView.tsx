@@ -545,7 +545,7 @@ export default function RunView() {
             <div className="space-y-3">
               {events.slice().reverse().map((e, i) => (
                 <div key={i} className="text-xs border-l-2 border-slate-700 pl-3 py-1">
-                  <div className="text-slate-500 mb-0.5">{new Date(e.timestamp).toLocaleTimeString()}</div>
+                  <div className="text-slate-500 mb-0.5">{new Date(e.timestamp || e.timestamp_end || e.timestamp_start || Date.now()).toLocaleTimeString()}</div>
                   <div className="text-slate-200 font-medium">
                     {e.event_type.toUpperCase()}
                   </div>

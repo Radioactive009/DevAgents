@@ -1,0 +1,197 @@
+{
+  "project_name": "Task Management Application",
+  "files": [
+    {
+      "path": "package.json",
+      "content": "{\n  \"name\": \"task-management-app\",\n  \"version\": \"0.1.0\",\n  \"private\": true,\n  \"scripts\": {\n    \"start\": \"react-scripts start\",\n    \"build\": \"react-scripts build\",\n    \"test\": \"react-scripts test\",\n    \"eject\": \"react-scripts eject\"\n  },\n  \"dependencies\": {\n    \"react\": \"^18.2.0\",\n    \"react-dom\": \"^18.2.0\",\n    \"react-scripts\": \"5.0.1\"\n  },\n  \"devDependencies\": {\n    \"@testing-library/jest-dom\": \"^5.16.5\",\n    \"@testing-library/react\": \"^13.4.0\",\n    \"@testing-library/user-event\": \"^14.5.0\",\n    \"jest\": \"^29.7.0\",\n    \"react-test-renderer\": \"^18.2.0\"\n  }\n}",
+      "description": "Project configuration with test scripts",
+      "requirement_ids": [
+        "REQ-001",
+        "REQ-002",
+        "REQ-003",
+        "REQ-004",
+        "REQ-005",
+        "REQ-006",
+        "REQ-007"
+      ]
+    },
+    {
+      "path": "src/components/TaskStore.jsx",
+      "content": "import { v4 as uuidv4 } from 'uuid';\n\nconst TaskStore = {\n  tasks: [],\n\n  getTasks(filter) {\n    let tasks = [...this.tasks];\n    if (filter === 'active') {\n      tasks = tasks.filter(task => !task.completed);\n    } else if (filter === 'completed') {\n      tasks = tasks.filter(task => task.completed);\n    }\n    return tasks;\n  },\n\n  addTask(title) {\n    if (!title || title.trim() === '') return;\n    const newTask = {\n      id: uuidv4(),\n      title: title.trim(),\n      completed: false,\n      createdAt: new Date().toISOString()\n    };\n    this.tasks = [newTask, ...this.tasks];\n    this.saveToLocalStorage();\n    return newTask;\n  },\n\n  toggleTaskCompletion(taskId) {\n    this.tasks = this.tasks.map(task =>\n      task.id === taskId ? { ...task, completed: !task.completed } : task\n    );\n    this.saveToLocalStorage();\n  },\n\n  editTask(taskId, newTitle) {\n    if (!newTitle || newTitle.trim() === '') return;\n    this.tasks = this.tasks.map(task =>\n      task.id === taskId ? { ...task, title: newTitle.trim() } : task\n    );\n    this.saveToLocalStorage();\n  },\n\n  deleteTask(taskId) {\n    this.tasks = this.tasks.filter(task => task.id !== taskId);\n    this.saveToLocalStorage();\n  },\n\n  saveToLocalStorage() {\n    try {\n      const data = JSON.stringify(this.tasks);\n      localStorage.setItem('tasks', data);\n    } catch (error) {\n      console.error('localStorage save error:', error);\n    }\n  },\n\n  loadFromLocalStorage() {\n    try {\n      const data = localStorage.getItem('tasks');\n      if (data) {\n        this.tasks = JSON.parse(data);\n      }\n    } catch (error) {\n      console.error('localStorage load error:', error);\n      this.tasks = [];\n    }\n  },\n\n  clearCompleted() {\n    this.tasks = this.tasks.filter(task => !task.completed);\n    this.saveToLocalStorage();\n  }\n};\n\nTaskStore.loadFromLocalStorage();\nexport default TaskStore;",
+      "description": "Task state management with localStorage persistence",
+      "requirement_ids": [
+        "REQ-001",
+        "REQ-002",
+        "REQ-003",
+        "REQ-004",
+        "REQ-005"
+      ]
+    },
+    {
+      "path": "src/components/TaskItem.jsx",
+      "content": "import React, { useState } from 'react';\nimport TaskStore from '../TaskStore';\n\nconst TaskItem = ({ task }) => {\n  const [isEditing, setIsEditing] = useState(false);\n  const [editTitle, setEditTitle] = useState(task.title);\n\n  const handleToggle = () => {\n    TaskStore.toggleTaskCompletion(task.id);\n    setIsEditing(false);\n  };\n\n  const handleDelete = () => {\n    TaskStore.deleteTask(task.id);\n  };\n\n  const handleSave = () => {\n    TaskStore.editTask(task.id, editTitle);\n    setIsEditing(false);\n    setEditTitle(task.title);\n  };\n\n  const handleInputChange = (e) => {\n    setEditTitle(e.target.value);\n  };\n\n  return (\n    <li\n      style={{ textDecoration: task.completed ? 'line-through' : 'none', marginBottom: '8px' }}\n    >\n      {isEditing ? (\n        <div style={{ display: 'flex', alignItems: 'center' }}>\n          <input\n            type=\"text\"\n            value={editTitle}\n            onChange={handleInputChange}\n            style={{ flex: 1, padding: '4px', fontSize: '14px' }}\n          />\n          <button\n            onClick={handleSave}\n            style={{ padding: '4px 8px', marginLeft: '8px', background: '#3b82f6', color: 'white', border: 'none', borderRadius: '4px', cursor: 'pointer' }}\n            disabled={editTitle.trim() === '' || editTitle === task.title}\n          >\n            Save\n          </button>\n        </div>\n      ) : (\n        <div style={{ display: 'flex', alignItems: 'center' }}>\n          <input\n            type=\"checkbox\"\n            checked={task.completed}\n            onChange={handleToggle}\n            style={{ marginRight: '8px', transform: 'scale(1.2)' }}\n          />\n          <span style={{ flex: 1, fontSize: '14px' }> {task.title} </span>\n          <button\n            onClick={handleDelete}\n            style={{ padding: '4px 8px', marginLeft: '8px', background: '#ef4444', color: 'white', border: 'none', borderRadius: '4px', cursor: 'pointer' }}\n            aria-label=\"Delete task\"\n          >\n            Delete\n          </button>\n        </div>\n      )}\n    </li>\n  );\n};\n\nexport default TaskItem;",
+      "description": "Single task item with toggle, edit, and delete functionality",
+      "requirement_ids": [
+        "REQ-001",
+        "REQ-002",
+        "REQ-003",
+        "REQ-004"
+      ]
+    },
+    {
+      "path": "src/components/TaskInput.jsx",
+      "content": "import React, { useState } from 'react';\nimport TaskStore from '../TaskStore';\n\nconst TaskInput = () => {\n  const [inputValue, setInputValue] = useState('');\n\n  const handleAddTask = (e) => {\n    e.preventDefault();\n    if (!inputValue.trim()) return;\n    TaskStore.addTask(inputValue);\n    setInputValue('');\n  };\n\n  return (\n    <form style={{ marginBottom: '16px' }} onSubmit={handleAddTask}>\n      <input\n        type=\"text\"\n        placeholder=\"Add a new task...\"\n        value={inputValue}\n        onChange={(e) => setInputValue(e.target.value)}\n        style={{ padding: '8px', fontSize: '14px', width: '300px', border: '1px solid #d1d5db', borderRadius: '4px' }}\n        required\n      />\n      <button\ntype=\"submit\"\n        style={{ padding: '8px 16px', marginLeft: '8px', background: '#10b981', color: 'white', border: 'none', borderRadius: '4px', cursor: 'pointer', fontSize: '14px' }}\n        disabled={!inputValue.trim()}\n      >\n        Add\n      </button>\n    </form>\n  );\n};\n\nexport default TaskInput;",
+      "description": "Task input form for adding new tasks",
+      "requirement_ids": [
+        "REQ-001"
+      ]
+    },
+    {
+      "path": "src/components/TaskFilters.jsx",
+      "content": "import React from 'react';\nimport TaskStore from '../TaskStore';\n\nconst TaskFilters = () => {\n  const [filter, setFilter] = useState('all');\n\n  const handleFilterChange = (e) => {\n    setFilter(e.target.value);\n  };\n\n  return (\n    <div style={{ marginBottom: '16px', justifyContent: 'space-between' }}>\n      <label\n        style={{ marginRight: '16px', fontSize: '14px', cursor: 'pointer' }}\n        >\n          <input\n            type=\"radio\"\n            name=\"filter\"\n            value=\"all\"\n            onChange={handleFilterChange}\n            checked={filter === 'all'}\n          />\n          All\n        </label>\n      <label\n        style={{ marginRight: '16px', fontSize: '14px', cursor: 'pointer' }}\n        >\n          <input\n            type=\"radio\"\n            name=\"filter\"\n            value=\"active\"\n            onChange={handleFilterChange}\n            checked={filter === 'active'}\n          />\n          Active\n        </label>\n      <label\n        style={{ fontSize: '14px', cursor: 'pointer' }}\n        >\n          <input\n            type=\"radio\"\n            name=\"filter\"\n            value=\"completed\"\n            onChange={handleFilterChange}\n            checked={filter === 'completed'}\n          />\n          Completed\n        </label>\n    </div>\n  );\n};\n\nexport default TaskFilters;\n",
+      "description": "Filter controls for all/active/completed task views",
+      "requirement_ids": [
+        "REQ-005"
+      ]
+    },
+    {
+      "path": "src/App.jsx",
+      "content": "import React, { useEffect } from 'react';\nimport TaskStore from './components/TaskStore';\nimport TaskInput from './components/TaskInput';\nimport TaskList from './components/TaskList';\nimport TaskFilters from './components/TaskFilters';\n\nconst App = () => {\n  useEffect(() => {\n    TaskStore.loadFromLocalStorage();\n  }, []);\n\n  return (\n    <div style={{ padding: '20px', maxWidth: '600px', margin: '0 auto' }}>\n      <h2 style={{ textAlign: 'center', color: '#1f2937', marginBottom: '24px' }}>Task Manager</h2>\n      <TaskInput />\n      <TaskFilters />\n      <TaskList />\n    </div>\n  );\n};\n\nexport default App;",
+      "description": "Main application component",
+      "requirement_ids": [
+        "REQ-001",
+        "REQ-002",
+        "REQ-003",
+        "REQ-004",
+        "REQ-005"
+      ]
+    },
+    {
+      "path": "src/components/TaskList.jsx",
+      "content": "import React from 'react';\nimport TaskItem from './TaskItem';\nimport TaskStore from '../TaskStore';\n\nconst TaskList = () => {\n  const filteredTasks = TaskStore.getTasks(filter);\n\n  return (\n    <ul style={{ listStyle: 'none', padding: 0 }}>\n      {filteredTasks.map((task) => (\n        <TaskItem key={task.id} task={task} />\n      ))}\n    </ul>\n  );\n};\n\nexport default TaskList;\n",
+      "description": "Task list component that displays all tasks",
+      "requirement_ids": [
+        "REQ-001",
+        "REQ-002",
+        "REQ-003",
+        "REQ-004",
+        "REQ-005"
+      ]
+    },
+    {
+      "path": "src/index.js",
+      "content": "import React from 'react';\nimport ReactDOM from 'react-dom/client';\nimport App from './App';\nimport './index.css';\n\nconst root = ReactDOM.createRoot(document.getElementById('root'));\nroot.render(\n  <React.StrictMode>\n    <App />\n  </React.StrictMode>\n);",
+      "description": "React root rendering",
+      "requirement_ids": [
+        "REQ-001",
+        "REQ-002",
+        "REQ-003",
+        "REQ-004",
+        "REQ-005"
+      ]
+    },
+    {
+      "path": "src/index.css",
+      "content": "body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; margin: 0; padding: 0; background: #f3f4f6; }\n#root { minHeight: 100vh; }\n",
+      "description": "Base CSS styles",
+      "requirement_ids": [
+        "REQ-006"
+      ]
+    },
+    {
+      "path": "src/tests/TaskStore.test.js",
+      "content": "import TaskStore from '../TaskStore';\n\ndescribe('TaskStore', () => {\n  beforeEach(() => {\n    localStorage.clear();\n    TaskStore.tasks = [];\n  });\n\n  describe('addTask', () => {\n    it('should add a task with a title', () => {\n      const task = TaskStore.addTask('Test task');\n      expect(TaskStore.tasks.length).toBe(1);\n      expect(task.title).toBe('Test task');\n      expect(task.completed).toBe(false);\n    });\n\n    it('should not add empty task', () => {\n      TaskStore.addTask('');\n      expect(TaskStore.tasks.length).toBe(0);\n    });\n  });\n\n  describe('toggleTaskCompletion', () => {\n    it('should mark task as completed', () => {\n      TaskStore.addTask('Test task');\n      TaskStore.toggleTaskCompletion(TaskStore.tasks[0].id);\n      expect(TaskStore.tasks[0].completed).toBe(true);\n    });\n\n    it('should mark task as uncompleted', () => {\n      TaskStore.addTask('Test task');\n      TaskStore.toggleTaskCompletion(TaskStore.tasks[0].id);\n      TaskStore.toggleTaskCompletion(TaskStore.tasks[0].id);\n      expect(TaskStore.tasks[0].completed).toBe(false);\n    });\n  });\n\n  describe('editTask', () => {\n    it('should edit task title', () => {\n      TaskStore.addTask('Original task');\n      TaskStore.editTask(TaskStore.tasks[0].id, 'Edited task');\n      expect(TaskStore.tasks[0].title).toBe('Edited task');\n    });\n\n    it('should not edit with empty title', () => {\n      TaskStore.addTask('Original task');\n      TaskStore.editTask(TaskStore.tasks[0].id, '');\n      expect(TaskStore.tasks[0].title).toBe('Original task');\n    });\n  });\n\n  describe('deleteTask', () => {\n    it('should delete a task', () => {\n      TaskStore.addTask('Task to delete');\n      TaskStore.deleteTask(TaskStore.tasks[0].id);\n      expect(TaskStore.tasks.length).toBe(0);\n    });\n  });\n\n  describe('filterTasks', () => {\n    it('should filter all tasks', () => {\n      TaskStore.addTask('Task 1');\n      TaskStore.addTask('Task 2');\n      TaskStore.tasks[1].completed = true;\n      const allTasks = TaskStore.getTasks('all');\n      expect(allTasks.length).toBe(2);\n    });\n\n    it('should filter active tasks', () => {\n      TaskStore.addTask('Task 1');\n      TaskStore.addTask('Task 2');\n      TaskStore.tasks[1].completed = true;\n      const activeTasks = TaskStore.getTasks('active');\n      expect(activeTasks.length).toBe(1);\n    });\n\n    it('should filter completed tasks', () => {\n      TaskStore.addTask('Task 1');\n      TaskStore.addTask('Task 2');\n      TaskStore.tasks[1].completed = true;\n      const completedTasks = TaskStore.getTasks('completed');\n      expect(completedTasks.length).toBe(1);\n    });\n  });\n});",
+      "description": "TaskStore unit tests",
+      "requirement_ids": [
+        "REQ-001",
+        "REQ-002",
+        "REQ-003",
+        "REQ-004",
+        "REQ-005"
+      ]
+    },
+    {
+      "path": "src/tests/TaskItem.test.js",
+      "content": "import React from 'react';\nimport { render, fireEvent } from '@testing-library/react';\nimport TaskItem from '../TaskItem';\nimport TaskStore from '../../TaskStore';\n\ndescribe('TaskItem', () => {\n  beforeEach(() => {\n    localStorage.clear();\n    TaskStore.tasks = [];\n    TaskStore.addTask('Test task');\n  });\n\n  it('should toggle completion', () => {\n    const { getByRole } = render(<TaskItem task={TaskStore.tasks[0]} />);\n    const checkbox = getByRole('checkbox');\n    fireEvent.click(checkbox);\n    expect(TaskStore.tasks[0].completed).toBe(true);\n  });\n\n  it('should delete task', () => {\n    const { getByText } = render(<TaskItem task={TaskStore.tasks[0]} />);\n    const deleteButton = getByText('Delete');\n    fireEvent.click(deleteButton);\n    expect(TaskStore.tasks.length).toBe(0);\n  });\n});\n",
+      "description": "TaskItem unit tests",
+      "requirement_ids": [
+        "REQ-001",
+        "REQ-002",
+        "REQ-003",
+        "REQ-004"
+      ]
+    },
+    {
+      "path": "src/tests/TaskFilters.test.js",
+      "content": "import React from 'react';\nimport { render, fireEvent } from '@testing-library/react';\nimport TaskFilters from '../TaskFilters';\nimport TaskStore from '../../TaskStore';\n\ndescribe('TaskFilters', () => {\n  beforeEach(() => {\n    localStorage.clear();\n    TaskStore.tasks = [];\n    TaskStore.addTask('Active task');\n    TaskStore.addTask('Completed task');\n    TaskStore.tasks[1].completed = true;\n  });\n\n  it('should filter all tasks', () => {\n    const { getByLabelText } = render(<TaskFilters />);\n    const allRadio = getByLabelText('All');\n    expect(allRadio.checked).toBe(true);\n  });\n\n  it('should filter active tasks', () => {\n    const { getByLabelText } = render(<TaskFilters />);\n    const activeRadio = getByLabelText('Active');\n    fireEvent.click(activeRadio);\n  });\n\n  it('should filter completed tasks', () => {\n    const { getByLabelText } = render(<TaskFilters />);\n    const completedRadio = getByLabelText('Completed');\n    fireEvent.click(completedRadio);\n  });\n});\n",
+      "description": "TaskFilters unit tests",
+      "requirement_ids": [
+        "REQ-005"
+      ]
+    },
+    {
+      "path": "src/tests/TaskInput.test.js",
+      "content": "import React from 'react';\nimport { render, fireEvent } from '@testing-library/react';\nimport TaskInput from '../TaskInput';\nimport TaskStore from '../../TaskStore';\n\ndescribe('TaskInput', () => {\n  beforeEach(() => {\n    localStorage.clear();\n    TaskStore.tasks = [];\n  });\n\n  it('should add a task', () => {\n    const { getByPlaceholderText } = render(<TaskInput />);\n    const input = getByPlaceholderText('Add a new task...');\n    fireEvent.change(input, { target: { value: 'New task' } });\n    fireEvent.click(getByText('Add'));\n    expect(TaskStore.tasks.length).toBe(1);\n    expect(TaskStore.tasks[0].title).toBe('New task');\n  });\n\n  it('should not add empty task', () => {\n    const { getByPlaceholderText } = render(<TaskInput />);\n    const input = getByPlaceholderText('Add a new task...');\n    fireEvent.change(input, { target: { value: '' } });\n    fireEvent.click(getByText('Add'));\n    expect(TaskStore.tasks.length).toBe(0);\n  });\n});\n",
+      "description": "TaskInput unit tests",
+      "requirement_ids": [
+        "REQ-001"
+      ]
+    },
+    {
+      "path": "public/index.html",
+      "content": "<!DOCTYPE html>\n<html lang=\"en\">\n<head>\n  <meta charset=\"UTF-8\" />\n  <meta name=\"viewport\" content=\"width=device-width, initial-scale=1.0\" />\n  <meta http-equiv=\"X-UA-Compatible\" content=\"ie=edge\" />\n  <title>Task Manager</title>\n</head>\n<body>\n  <div id=\"root\"></div>\n</body>\n</html>",
+      "description": "HTML template for the application",
+      "requirement_ids": [
+        "REQ-006"
+      ]
+    }
+  ],
+  "entrypoint": "src/index.js",
+  "run_command": "npm start",
+  "test_command": "npm test",
+  "dependencies": [
+    "react",
+    "react-dom",
+    "react-scripts",
+    "uuid"
+  ],
+  "requirement_coverage": {
+    "REQ-001": [
+      "src/components/TaskInput.jsx",
+      "src/tests/TaskInput.test.js",
+      "src/TaskStore.jsx"
+    ],
+    "REQ-002": [
+      "src/components/TaskItem.jsx",
+      "src/tests/TaskItem.test.js",
+      "src/TaskStore.jsx"
+    ],
+    "REQ-003": [
+      "src/components/TaskItem.jsx",
+      "src/tests/TaskItem.test.js",
+      "src/TaskStore.jsx"
+    ],
+    "REQ-004": [
+      "src/components/TaskItem.jsx",
+      "src/tests/TaskItem.test.js",
+      "src/TaskStore.jsx",
+      "src/tests/TaskStore.test.js"
+    ],
+    "REQ-005": [
+      "src/components/TaskFilters.jsx",
+      "src/tests/TaskFilters.test.js",
+      "src/components/TaskList.jsx",
+      "src/TaskStore.jsx"
+    ],
+    "REQ-006": [
+      "src/index.css",
+      "public/index.html"
+    ],
+    "REQ-007": [
+      "src/tests/TaskStore.test.js",
+      "src/tests/TaskItem.test.js",
+      "src/tests/TaskFilters.test.js",
+      "src/tests/TaskInput.test.js"
+    ]
+  }
+}

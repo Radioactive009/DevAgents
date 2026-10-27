@@ -107,7 +107,8 @@ def execute_run(run_id: str, request: RunRequest):
         
         telemetry = Telemetry.get_instance()
         record = telemetry.runs.get(run_id)
-        if record and (not getattr(record, "success", True) or getattr(record, "final_status", "") in ["SUPERVISOR_FAILED", "ARCHITECTURE_FAILED", "CODING_FAILED", "INFRASTRUCTURE_ERROR", "HUMAN_APPROVAL_REJECTED", "ERROR"]):
+        failed_statuses = ["SUPERVISOR_FAILED", "ARCHITECTURE_FAILED", "CODING_FAILED", "INFRASTRUCTURE_ERROR", "HUMAN_APPROVAL_REJECTED", "ERROR"]
+        if record and getattr(record, "final_status", "") in failed_statuses:
             active_runs[run_id] = "FAILED"
             run_errors[run_id] = (state.metadata.get("coding_error") or 
                                   state.metadata.get("architecture_error") or 
@@ -116,6 +117,7 @@ def execute_run(run_id: str, request: RunRequest):
                                   f"Workflow halted with status: {record.final_status}")
         else:
             active_runs[run_id] = "COMPLETED"
+            run_errors[run_id] = None
     except Exception as e:
         print(f"Run failed: {e}")
         import traceback
@@ -134,11 +136,12 @@ async def create_run(request: RunRequest):
 async def get_run(run_id: str):
     telemetry = Telemetry.get_instance()
     
-    status = active_runs.get(run_id, "COMPLETED" if run_id in telemetry.runs else "UNKNOWN")
-    
-    record = telemetry.runs.get(run_id)
+    record = get_run_record(run_id)
+    status = active_runs.get(run_id, "COMPLETED" if record else "UNKNOWN")
     err = run_errors.get(run_id)
-    if status == "FAILED" or (status != "RUNNING" and record and getattr(record, "final_status", "") in ["SUPERVISOR_FAILED", "ARCHITECTURE_FAILED", "CODING_FAILED", "INFRASTRUCTURE_ERROR", "HUMAN_APPROVAL_REJECTED", "ERROR"]):
+    failed_statuses = ["SUPERVISOR_FAILED", "ARCHITECTURE_FAILED", "CODING_FAILED", "INFRASTRUCTURE_ERROR", "HUMAN_APPROVAL_REJECTED", "ERROR"]
+    if status == "FAILED" or (status != "RUNNING" and record and getattr(record, "final_status", "") in failed_statuses):
+        status = "FAILED"
         if not err:
             state = active_runs_state.get(run_id)
             if state:
@@ -148,7 +151,7 @@ async def get_run(run_id: str):
                        state.metadata.get("testing_error"))
             if not err and getattr(record, "final_status", None):
                 err = f"Pipeline halted with status: {record.final_status}"
-    elif status == "RUNNING":
+    else:
         err = None
             
     if record:
@@ -180,21 +183,43 @@ async def get_run_events(run_id: str):
                     pass
     return {"events": events}
 
-@app.get("/api/runs/{run_id}/metrics")
-async def get_run_metrics(run_id: str):
+def get_run_record(run_id: str):
     telemetry = Telemetry.get_instance()
     record = telemetry.runs.get(run_id)
+    if record:
+        return record
+    log_path = f"logs/runs/{run_id}.jsonl"
+    if os.path.exists(log_path):
+        try:
+            with open(log_path, "r", encoding="utf-8") as f:
+                for line in f:
+                    if line.strip():
+                        data = json.loads(line)
+                        if data.get("event_type") == "run_summary":
+                            class RecordObj:
+                                pass
+                            r = RecordObj()
+                            for k, v in data.items():
+                                setattr(r, k, v)
+                            return r
+        except Exception:
+            pass
+    return None
+
+@app.get("/api/runs/{run_id}/metrics")
+async def get_run_metrics(run_id: str):
+    record = get_run_record(run_id)
     if not record:
         raise HTTPException(status_code=404, detail="Metrics not found")
         
     return {
         "run_duration": getattr(record, "duration_s", 0),
-        "total_llm_calls": record.total_llm_calls,
+        "total_llm_calls": getattr(record, "total_llm_calls", 0),
         "total_tokens": getattr(record, "total_tokens", 0),
-        "total_tool_calls": record.total_tool_calls,
-        "total_rag_queries": record.total_rag_queries,
+        "total_tool_calls": getattr(record, "total_tool_calls", 0),
+        "total_rag_queries": getattr(record, "total_rag_queries", 0),
         "total_memory_queries": getattr(record, "total_memory_queries", 0),
-        "debugging_iterations": record.debugging_iterations,
+        "debugging_iterations": getattr(record, "debugging_iterations", 0),
         "test_pass_rate": getattr(record, "test_pass_rate", 0.0),
         "requirement_coverage": getattr(record, "requirement_coverage", 0.0),
         "verification_status": getattr(record, "verification_status", "UNKNOWN")
@@ -203,16 +228,36 @@ async def get_run_metrics(run_id: str):
 @app.get("/api/runs")
 async def list_runs():
     telemetry = Telemetry.get_instance()
+    seen = set()
     runs = []
+    # In-memory runs first
     for run_id, record in telemetry.runs.items():
+        seen.add(run_id)
         runs.append({
             "run_id": run_id,
-            "timestamp": record.timestamp_start,
-            "configuration": record.configuration,
+            "timestamp": getattr(record, "timestamp_start", None),
+            "configuration": getattr(record, "configuration", {}),
             "status": active_runs.get(run_id, "COMPLETED"),
             "final_status": getattr(record, "final_status", None)
         })
-    return {"runs": list(reversed(runs))}
+    # Add historical runs from disk
+    if os.path.exists("logs/runs"):
+        for fname in os.listdir("logs/runs"):
+            if fname.startswith("run-") and fname.endswith(".jsonl"):
+                rid = fname[:-6]
+                if rid not in seen:
+                    rec = get_run_record(rid)
+                    if rec:
+                        seen.add(rid)
+                        runs.append({
+                            "run_id": rid,
+                            "timestamp": getattr(rec, "timestamp_start", None),
+                            "configuration": getattr(rec, "configuration", {}),
+                            "status": "COMPLETED" if getattr(rec, "final_status", "") not in ["SUPERVISOR_FAILED", "ARCHITECTURE_FAILED", "CODING_FAILED", "INFRASTRUCTURE_ERROR", "HUMAN_APPROVAL_REJECTED", "ERROR"] else "FAILED",
+                            "final_status": getattr(rec, "final_status", None)
+                        })
+    runs.sort(key=lambda r: r.get("timestamp") or "", reverse=True)
+    return {"runs": runs}
 
 def get_file_map_for_run(run_id: str) -> dict:
     state = active_runs_state.get(run_id)

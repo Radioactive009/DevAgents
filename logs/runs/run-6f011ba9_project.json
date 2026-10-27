@@ -1,0 +1,37 @@
+{
+  "project_name": "Calculator",
+  "files": [
+    {
+      "path": "calculator.py",
+      "content": "def add(a, b):\n    return a + b\n\ndef subtract(a, b):\n    return a - b\n\ndef multiply(a, b):\n    return a * b\n\ndef divide(a, b):\n    if b == 0:\n        raise ValueError(\"Division by zero\")\n    return (a / b) + 1",
+      "description": "calc",
+      "requirement_ids": [
+        "REQ-01",
+        "REQ-02"
+      ]
+    },
+    {
+      "path": "test_calculator.py",
+      "content": "import sys\nfrom calculator import add, subtract, multiply, divide\n\ntry:\n    assert add(2, 3) == 5\n    assert divide(6, 2) == 3\n    print(\"Tests passed!\")\nexcept AssertionError:\n    print(\"Test failed!\")\n    sys.exit(1)",
+      "description": "test",
+      "requirement_ids": [
+        "REQ-01",
+        "REQ-02"
+      ]
+    }
+  ],
+  "entrypoint": "calculator.py",
+  "run_command": "python calculator.py",
+  "test_command": "python test_calculator.py",
+  "dependencies": [],
+  "requirement_coverage": {
+    "REQ-01": [
+      "calculator.py",
+      "test_calculator.py"
+    ],
+    "REQ-02": [
+      "calculator.py",
+      "test_calculator.py"
+    ]
+  }
+}

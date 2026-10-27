@@ -75,6 +75,8 @@ class OpenRouterProvider(LLMProvider):
             "max_tokens": max_tokens,
             **kwargs
         }
+        if "reasoning" not in payload and ("nemotron" in self.model.lower() or "reasoning" in self.model.lower()):
+            payload["reasoning"] = {"max_tokens": 0}
         
         max_retries = 5
         base_delay = 2.0
@@ -93,12 +95,17 @@ class OpenRouterProvider(LLMProvider):
             )
             
             try:
-                with urllib.request.urlopen(req, timeout=30) as response:
+                with urllib.request.urlopen(req, timeout=120) as response:
                     status_code = response.getcode()
                     response_body = response.read().decode('utf-8')
                     data = json.loads(response_body)
                     
-                    text = data['choices'][0]['message'].get('content') or ""
+                    msg = data['choices'][0]['message']
+                    text = msg.get('content') or ""
+                    if not text and msg.get('reasoning'):
+                        reasoning = msg.get('reasoning', '')
+                        if "{" in reasoning and "}" in reasoning:
+                            text = reasoning
                     
                     usage = data.get('usage') or {}
                     input_tokens = usage.get('prompt_tokens')
