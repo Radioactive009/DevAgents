@@ -52,7 +52,7 @@ def main():
     if state.architecture:
         print("\nArchitecture Components:")
         for c in state.architecture.components:
-            print(f"  * {c.name} ({c.type}): {c.description}")
+            print(f"  * {c.name}: {c.responsibility}")
 
     print("\n" + "-" * 60)
     print("2. CODING STAGE (Generated Files)")
