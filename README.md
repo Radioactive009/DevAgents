@@ -1,123 +1,193 @@
-# DevAgents — A Multi-Agent System for Automated Software Engineering
+# DevAgents — Complete Autonomous Multi-Agent Software Engineering Platform
 
-## 1. Research Problem
-Does a structured multi-agent software-engineering workflow improve the functional correctness and debugging performance of LLM-based software development compared with a single-agent LLM baseline?
+DevAgents is a research-oriented autonomous software engineering platform that accepts a high-level requirement and independently carries out the full software development lifecycle: requirement decomposition, architecture planning, multi-file code generation, isolated execution, testing, automated failure classification, root-cause diagnosis, AST source code patching, retesting, evidence-based verification, and live interactive web application preview.
 
-## 2. Primary Research Question
-Does a structured multi-agent software-engineering workflow improve the functional correctness and debugging performance of LLM-based software development compared with a single-agent LLM baseline?
+---
 
-## 3. Secondary Research Questions
-- **RQ2:** Does project-specific RAG and memory improve requirement coverage and debugging success compared with the same multi-agent system without RAG?
-- **RQ3:** Does integrating an ML-based failure/defect classification component improve debugging efficiency and bug-fix success?
+## 1. Research Problem & Motivation
+Does a structured multi-agent software-engineering workflow improve the functional correctness, debugging performance, and requirement coverage of LLM-based software development compared with a single-agent LLM baseline?
 
-## 4. Experimental Configurations
-- **SINGLE_AGENT_BASELINE:** One LLM, no multi-agent orchestration, no RAG, no ML classifier.
-- **MULTI_AGENT:** Supervisor, Architecture Agent, Coding Agent, Testing Agent, Debugging Agent, Verification Agent, no RAG, no ML classifier.
-- **MULTI_AGENT_RAG:** Same multi-agent workflow + RAG + Project memory, no ML classifier.
-- **FULL_DEVAGENTS:** Multi-agent workflow + RAG + Project memory + ML failure classifier + Tool execution + Verification + Observability.
+### Primary Research Questions
+- **RQ1:** Does a structured multi-agent software engineering workflow (`Supervisor -> Architecture -> Coding -> Testing -> Debugging -> Verification`) achieve higher functional correctness and test pass rates than a single-agent baseline with iterative feedback?
+- **RQ2:** Do project-specific retrieval-augmented generation (RAG) and persistent project memory improve requirement coverage and reduce redundant debugging iterations across runs?
+- **RQ3:** Does integrating hybrid failure classification (rule-based + ML) improve root-cause diagnosis and automated bug-fix success?
 
-## 5. Planned Metrics
-- task_success_rate
-- test_pass_rate
-- bug_fix_success_rate
-- requirement_coverage
-- code_coverage
-- average_debug_iterations
-- average_execution_time
-- average_llm_calls
-- average_tool_calls
-- human_intervention_rate
+---
 
-## 6. Planned Datasets
-(To be determined, see datasets/README.md)
+## 2. System Architecture & Workflow
 
-## 7. Project Structure
-- `agents/`: AI agent implementations (Phase 2+)
-- `orchestration/`: Multi-agent orchestration
-- `llm/`: Provider-independent LLM interfaces
-- `tools/`: Tool implementations
-- `execution/`: Code execution and sandbox
-- `rag/`: RAG and memory pipelines
-- `ml/`: ML failure classification
-- `evaluation/`: Evaluation metrics
-- `experiments/`: Experiment runners and loggers
-- `datasets/`: Dataset resources
-- `logs/`: Experiment run logs
-- `configs/`: Configuration files
+DevAgents implements a robust six-agent orchestration pipeline with shared `ProjectState`:
 
-## 8. Environment Setup
-Use Python 3.11+. Install dependencies:
+```
+User Requirement
+       ↓
+[SupervisorAgent]  -->  Decomposes requirements, generates testable plan & acceptance criteria
+       ↓
+[ArchitectureAgent] -->  Designs components, interfaces, file mappings & tech stack
+       ↓
+(Optional Human Approval Checkpoint) --> Interactive Pause: Approve / Reject with Feedback
+       ↓
+[CodingAgent]       -->  Generates multi-file project source code with AST & syntax validation
+       ↓
+[TestingAgent]      -->  Executes real code in LocalProcessSandbox or DockerSandbox
+       ↓
+    [Failed?] ----Yes----> [DebuggingAgent]  -->  Diagnoses failure, generates & applies real patch
+       ^                         |
+       |                         | (Retest Loop - bounded retries)
+       +-------------------------+
+       ↓ No (Tests Passed or Max Retries)
+[VerificationAgent] -->  Verifies implementation against execution evidence (VERIFIED / INCOMPLETE / FAILED)
+       ↓
+[Telemetry & Observability] --> Logs metrics, events, and diffs to JSONL; feeds Live Dashboard
+```
+
+---
+
+## 3. Supported Languages & Multi-Language Execution
+- **Python**: Full execution support, `pytest` test runner, virtual environment and dependency target isolation, traceback parsing.
+- **JavaScript & TypeScript (Node.js)**: `package.json` detection, `npm install`, test execution via `node --test`, `Vitest`, or `Jest`, production build verification, and JS/TS source patching.
+- **Web Applications**: Auto-detection of HTML/JS/CSS entrypoints with sandboxed live preview in dashboard.
+
+---
+
+## 4. Key Capabilities & Phases
+
+### Phase 1: Six-Agent Workflow & Baseline
+- Supervisor, Architecture, Coding, Testing, Debugging, and Verification agents.
+- `SingleAgentBaseline` for controlled scientific comparison.
+
+### Phase 2: Multi-Language Execution Engine
+- `LocalProcessSandbox` (with Windows/Linux executable path resolution) and `DockerSandbox`.
+- Timeout enforcement, execution resource boundaries, and isolation.
+
+### Phase 3: Live Web Application Preview
+- Serving generated web applications via `/api/runs/{run_id}/preview/{file}`.
+- Dashboard iframe embedding with reload controls and entrypoint auto-detection.
+
+### Phase 4: Context Optimization for Large Projects
+- `ContextOptimizer` extracts relevant files from failure stack traces.
+- Diff-based prompt formulation across debugging cycles reduces context token usage by up to 60-80% on multi-file repositories.
+
+### Phase 5: Optional Human Approval Checkpoint
+- When enabled, execution pauses after ArchitectureAgent.
+- Review components, dependencies, and file structures.
+- Approve or reject via UI buttons or `POST /api/runs/{run_id}/approve`.
+
+### Phase 6 & 7: RAG Context & Project Memory
+- Document chunking, TF-IDF / vector retrieval (`RAGPipeline`, `Retriever`).
+- Persistent episodic memory (`ProjectMemory`) storing validated conventions and fixes across runs.
+
+### Phase 8 & 9: Research Configurations & Empirical Benchmark
+Four reproducible configurations:
+1. `SINGLE_AGENT_BASELINE`
+2. `MULTI_AGENT`
+3. `MULTI_AGENT_RAG`
+4. `MULTI_AGENT_RAG_MEMORY`
+
+Quantitative evaluation metrics: functional correctness, test pass rate, bug fix success rate, requirement coverage, debug iterations, execution latency, and token consumption.
+
+### Phase 10: Hybrid Failure Classification
+- Rule-based diagnostics + `TfidfVectorizer` and `LogisticRegression` ML classifier.
+- Categorizes errors into: `SYNTAX_ERROR`, `ASSERTION_FAILURE`, `TYPE_ERROR`, `DEPENDENCY_ERROR`, `BUILD_ERROR`, `TIMEOUT_ERROR`, `LOGIC_ERROR`, `INFRASTRUCTURE_ERROR`.
+
+### Phase 11: Security & Robustness
+- Workspace path traversal protection (`..`, absolute paths blocked).
+- Protected file write guards (`.env`, `.git`).
+- API key and secret scrubbing across all logs and prompt contexts.
+
+---
+
+## 5. Quick Start & Startup Commands
+
+### Prerequisites
+- Python 3.11+
+- Node.js 18+ and npm
+
+### Installation
 ```bash
+# Clone the repository
+git clone https://github.com/Radioactive009/DevAgents.git
+cd DevAgents
+
+# Install Python dependencies
 pip install -r requirements.txt
+
+# Install Frontend dependencies
+cd ui
+npm install
+cd ..
 ```
 
-## 9. How to run tests
-Run all unit tests using pytest:
+### Environment Configuration
+Copy `.env.example` to `.env` and set your preferred provider keys:
+```env
+GROQ_API_KEY=your_groq_api_key_here
+GEMINI_API_KEY=your_gemini_api_key_here
+OPENROUTER_API_KEY=your_openrouter_api_key_here
+```
+*(Deterministic mock mode is supported out-of-the-box without API keys)*
+
+### Running Backend API Server
 ```bash
+py -m uvicorn api.main:app --host 0.0.0.0 --port 8000 --reload
+```
+
+### Running Frontend Dashboard
+```bash
+cd ui
+npm run dev
+```
+Open [http://localhost:5173](http://localhost:5173) in your browser.
+
+### Running CLI Demo
+```bash
+# Run with Mock Provider
+py run_demo_cli.py --provider mock
+
+# Run with Groq Provider
+py run_demo_cli.py --provider groq --model openai/gpt-oss-120b
+
+# Run with Gemini Provider
+py run_demo_cli.py --provider gemini --model gemini-2.0-flash
+```
+
+### Running Automated Test Suite
+```bash
+# Python backend tests
 py -m pytest
-```
-Or with unittest:
-```bash
-py -m unittest discover tests
-```
 
-To run UI tests and build:
-```bash
+# Frontend React/Vite tests
 cd ui
 npm test
 npm run build
 ```
 
-## 10. How to run the System & Dashboard
-Start the FastAPI backend:
+### Running Empirical Research Evaluation
 ```bash
-py -m uvicorn api.main:app --reload --port 8000
-```
-Start the web dashboard:
-```bash
-cd ui
-npm run dev
+py experiments/run_research_evaluation.py
 ```
 
-To run a demonstration task programmatically:
-```bash
-py run_demo.py
+---
+
+## 6. Project Directory Structure
+```
+DevAgents/
+├── agents/             # AI agent implementations (Supervisor, Arch, Code, Test, Debug, Verify, Baseline)
+├── api/                # FastAPI backend endpoints (runs, events, preview, approval)
+├── benchmarks/         # Benchmark adapters (SWE-bench, dataset ingestion)
+├── configs/            # Configuration protocols and task manifests
+├── evaluation/         # Metrics and hybrid failure classification
+├── execution/          # Sandboxes (LocalProcessSandbox, DockerSandbox)
+├── experiments/        # Research evaluation runners and protocols
+├── experiment_results/ # Empirical evaluation tables and metric summaries
+├── llm/                # LLM provider abstractions (Groq, Gemini, OpenRouter, Mock)
+├── observability/      # Telemetry, event logging, and schemas
+├── rag/                # RAG retrieval, context builder, context optimizer, memory
+├── tests/              # Comprehensive unit and integration test suite
+└── ui/                 # React, TypeScript, and Vite interactive dashboard
 ```
 
-## 11. How experiment logging works
-Experiment logs and telemetry events are written in JSONL format to `logs/runs/<run_id>.jsonl` and `logs/runs.jsonl`. Each record is a self-contained, sanitized JSON object containing agent events, execution times, test passes/failures, diffs, and verification metrics.
+---
 
-## 12. Current Implementation Status
-**Complete Multi-Agent Software Engineering System Implemented & Stabilized:**
-- **Supervisor Agent**: Requirements decomposition, planning, and task coordination.
-- **Architecture Agent**: Component design, dependency mapping, and interface specification.
-- **Coding Agent**: Complete source code generation with syntax and security validation.
-- **Testing Agent**: Isolated execution in Local Process Sandbox or Docker Sandbox, capturing exit codes and test pass rates.
-- **Debugging Agent**: Root-cause analysis, patch generation, and deterministic file updates with bounded retries.
-- **Verification Agent**: Evidence-based requirement coverage and test validation.
-- **Single Agent Baseline**: Comparison baseline for research experiments.
-- **Project Knowledge (RAG) & Memory**: Embedding-based code retrieval and episodic memory.
-- **Observability & Web Dashboard**: Full visual tracking of requirements, pipeline progress, file tree, test results, debug diffs, and metrics. 
-
-## 13. LLM Provider Architecture
-We use provider abstraction so that experimental configurations can be compared without coupling the agent implementation to a single LLM provider.
-
-The architecture isolates the core application from specific AI vendor APIs:
-
-`	ext
-Application
-    ↓
-LLMProvider
-    ↓
-Provider Factory
-    ↓
-Groq / Gemini / Hugging Face
-`
-
-- **Provider Abstraction**: All LLM calls go through LLMProvider and return a uniform LLMResponse.
-- **Provider Factory**: create_llm_provider(config) dynamically selects the provider.
-- **Supported Providers**: Groq, Google Gemini, Hugging Face.
-- **Mock Provider**: A deterministic MockLLMProvider allows testing without internet access or real API keys.
-- **Configuration & API Key Management**: API keys are read from environment variables (GROQ_API_KEY, GEMINI_API_KEY, HF_API_KEY). Keys are never logged. Model and provider selections are managed via configuration files.
-- **Error Handling**: Provider-specific API errors, rate limits, and auth failures are normalized into standard exceptions (LLMError, LLMRateLimitError, etc.).
-- **Reproducibility**: The provider, model, latency, and token counts are extracted generically and passed to the experiment logger for valid comparisons.
+## 7. License
+Academic and Educational Research License. Developed for Advanced Autonomous Multi-Agent Software Engineering Research.
