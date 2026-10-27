@@ -259,6 +259,12 @@ class GitHubPublishingService:
                 if p_code != 0:
                     raise GitHubPublishingError(f"Failed to push code to GitHub repository '{repo_name}': {p_err}")
 
+            # Query repo numeric ID (required for Vercel Git deployments)
+            repo_id = None
+            id_code, id_out, _ = self._runner(["gh", "api", f"repos/{owner}/{repo_name}", "-q", ".id"], cwd=staging_dir)
+            if id_code == 0 and id_out.strip().isdigit():
+                repo_id = int(id_out.strip())
+
             repo_url = f"https://github.com/{owner}/{repo_name}"
 
             return GitHubRepoInfo(
@@ -268,5 +274,6 @@ class GitHubPublishingService:
                 is_private=is_private,
                 default_branch="main",
                 commit_sha=commit_sha,
+                repo_id=repo_id,
                 created_at=datetime.utcnow().isoformat()
             )

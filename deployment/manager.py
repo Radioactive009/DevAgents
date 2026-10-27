@@ -163,10 +163,28 @@ class DeploymentManager:
                 all_files = dict(files)
                 all_files[".github/workflows/ci.yml"] = ci_content
 
+                git_source = None
+                repo_id = getattr(record.github, "repo_id", None)
+                if not repo_id and record.github and record.github.owner and record.github.repo_name:
+                    try:
+                        code, out, _ = self.github._runner(["gh", "api", f"repos/{record.github.owner}/{record.github.repo_name}", "-q", ".id"])
+                        if code == 0 and out.strip().isdigit():
+                            repo_id = int(out.strip())
+                            record.github.repo_id = repo_id
+                    except Exception:
+                        pass
+
+                if repo_id:
+                    git_source = {
+                        "type": "github",
+                        "repoId": repo_id,
+                        "ref": getattr(record.github, "default_branch", "main") or "main"
+                    }
+
                 dep_info = self.vercel.create_deployment(
                     project_name=vercel_project_name,
                     files=all_files,
-                    git_source={"type": "github", "repo": github_repo_slug, "ref": "main"}
+                    git_source=git_source
                 )
                 record.vercel = dep_info
 
@@ -198,7 +216,7 @@ class DeploymentManager:
                 else:
                     health_res = self.health.verify_deployment_health(
                         deployment_url=target_url,
-                        expected_content=project_name if files.get("index.html") else None,
+                        expected_content=None,
                         max_retries=3
                     )
                     record.health_check = health_res

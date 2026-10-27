@@ -40,23 +40,18 @@ def test_path_traversal_rejection_security(tmp_path):
 
 def test_missing_vercel_token_halts_real_deployment_without_leaking(tmp_path):
     mock_gh = GitHubPublishingService(command_runner=lambda cmd, **kw: (0, "", ""))
-    mgr = DeploymentManager(storage_dir=str(tmp_path), github_service=mock_gh)
+    mock_vc = VercelService(token="")
+    mgr = DeploymentManager(storage_dir=str(tmp_path), github_service=mock_gh, vercel_service=mock_vc)
     files = {"index.html": "<h1>Test</h1>"}
     
-    # Pre-populate record with GitHub published so it advances to Vercel stage
-    rec = mgr.deploy_run("run-notoken", "NoTokenApp", files, use_mock=True)
-    # Now try real deployment without token
-    with patch.dict(os.environ, {}, clear=True):
-        record = mgr.deploy_run(
-            run_id="run-notoken-real",
-            project_name="NoTokenApp",
-            files=files,
-            use_mock=False
-        )
+    record = mgr.deploy_run(
+        run_id="run-notoken-real",
+        project_name="NoTokenApp",
+        files=files,
+        use_mock=False
+    )
     assert record.stage == DeploymentStage.DEPLOYMENT_FAILED
-    # Either GitHub auth or Vercel auth is safely reported
     assert "not configured" in record.error or "unavailable" in record.error
-    # Ensure no secrets or tokens leaked
     assert "Bearer" not in record.error
     assert "ghp_" not in record.error
 

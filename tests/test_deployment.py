@@ -189,7 +189,7 @@ def test_ci_workflow_python_structure():
 # =====================================================================
 
 def test_vercel_auth_missing_token():
-    vc = VercelService(token=None)
+    vc = VercelService(token="")
     auth = vc.check_auth()
     assert auth["authenticated"] is False
     assert "VERCEL_TOKEN is not configured" in auth["message"]

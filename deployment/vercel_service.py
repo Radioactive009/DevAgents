@@ -18,7 +18,17 @@ class VercelService:
         :param request_fn: Optional callable(method, url, headers, data) -> (status_code, response_dict)
                            Used for dependency injection and deterministic unit testing.
         """
-        self._token = token or os.environ.get("VERCEL_TOKEN")
+        if token is not None:
+            self._token = token
+        else:
+            self._token = os.environ.get("VERCEL_TOKEN")
+            if not self._token:
+                try:
+                    import dotenv
+                    dotenv.load_dotenv(override=True)
+                    self._token = os.environ.get("VERCEL_TOKEN")
+                except Exception:
+                    pass
         self._request_fn = request_fn or self._default_request_fn
 
     @staticmethod
@@ -156,8 +166,16 @@ class VercelService:
             "files": vercel_files,
             "target": "production"
         }
-        if git_source:
-            payload["gitSource"] = git_source
+        if git_source and git_source.get("repoId"):
+            try:
+                repo_id_val = int(git_source["repoId"])
+                payload["gitSource"] = {
+                    "type": git_source.get("type", "github"),
+                    "repoId": repo_id_val,
+                    "ref": git_source.get("ref", "main")
+                }
+            except (ValueError, TypeError):
+                pass
 
         status, data = self._request_fn("POST", f"{VERCEL_API_BASE}/v13/deployments", headers, payload)
         if status not in [200, 201]:

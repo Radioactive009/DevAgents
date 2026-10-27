@@ -26,6 +26,7 @@ class GitHubRepoInfo:
     is_private: bool = True
     default_branch: str = "main"
     commit_sha: Optional[str] = None
+    repo_id: Optional[int] = None
     created_at: Optional[str] = None
 
 @dataclass
