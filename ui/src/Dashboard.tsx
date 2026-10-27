@@ -19,6 +19,22 @@ export default function Dashboard() {
       .catch(e => console.error(e));
   }, []);
 
+  const [humanApproval, setHumanApproval] = useState(false);
+  const [modelName, setModelName] = useState('');
+
+  const loadPreset = (type: string) => {
+    if (type === 'python') {
+      setTaskDesc('Build a Python calculator module with add, subtract, multiply, divide, division-by-zero handling, and pytest tests.');
+      setRequirements('Implement add, subtract, multiply, and divide\nHandle division by zero with ValueError\nProvide full pytest test coverage');
+    } else if (type === 'react') {
+      setTaskDesc('Build a standalone interactive Web Todo & Notes dashboard with HTML, Tailwind CSS styling, vanilla JavaScript state management, and clear UI controls.');
+      setRequirements('Generate index.html with responsive layout and modern dark theme\nImplement add, delete, toggle complete, and local persistence\nInclude automated verification test script');
+    } else if (type === 'string_utils') {
+      setTaskDesc('Build a Python string utility module with reverse_string, is_palindrome, count_vowels, and comprehensive pytest tests.');
+      setRequirements('Implement reverse_string(s: str) -> str\nImplement is_palindrome(s: str) -> bool (case-insensitive)\nImplement count_vowels(s: str) -> int\nInclude full pytest test coverage');
+    }
+  };
+
   const handleStart = async () => {
     const reqList = requirements.split('\n').map(r => r.trim()).filter(r => r);
     const res = await fetch('/api/runs', {
@@ -30,7 +46,9 @@ export default function Dashboard() {
         use_rag: useRag,
         use_memory: useMemory,
         provider: provider,
-        system: system
+        model: modelName.trim() || undefined,
+        system: system,
+        human_approval: humanApproval
       })
     });
     if (res.ok) {
@@ -43,9 +61,17 @@ export default function Dashboard() {
     <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
       <div className="lg:col-span-2 space-y-6">
         <div className="bg-[#161925] border border-slate-800 rounded-xl p-6 shadow-xl">
-          <h2 className="text-xl font-bold mb-4 flex items-center gap-2">
-            <Play className="w-5 h-5 text-blue-400" /> Create DevAgents Run
-          </h2>
+          <div className="flex flex-col md:flex-row md:items-center justify-between pb-4 border-b border-slate-800/80 mb-6 gap-3">
+            <h2 className="text-xl font-bold flex items-center gap-2">
+              <Play className="w-5 h-5 text-blue-400" /> Create DevAgents Run
+            </h2>
+            <div className="flex items-center gap-2 text-xs">
+              <span className="text-slate-400 font-medium">Quick Presets:</span>
+              <button onClick={() => loadPreset('python')} className="px-2.5 py-1 bg-slate-800 hover:bg-slate-700 rounded text-slate-300 transition-colors">Python Calc</button>
+              <button onClick={() => loadPreset('react')} className="px-2.5 py-1 bg-blue-900/40 hover:bg-blue-800/50 text-blue-300 rounded border border-blue-500/30 transition-colors">Web Dashboard</button>
+              <button onClick={() => loadPreset('string_utils')} className="px-2.5 py-1 bg-slate-800 hover:bg-slate-700 rounded text-slate-300 transition-colors">String Utils</button>
+            </div>
+          </div>
           
           <div className="space-y-4">
             <div>
@@ -55,14 +81,14 @@ export default function Dashboard() {
                 value={system}
                 onChange={e => setSystem(e.target.value)}
               >
-                <option value="MULTI_AGENT">Multi-Agent Workflow</option>
-                <option value="SINGLE_AGENT_BASELINE">Single-Agent Baseline</option>
+                <option value="MULTI_AGENT">Multi-Agent Workflow (Supervisor, Arch, Code, Test, Debug, Verify)</option>
+                <option value="SINGLE_AGENT_BASELINE">Single-Agent Baseline (Single LLM Iterative Feedback)</option>
               </select>
             </div>
             <div>
               <label className="block text-sm font-medium text-slate-400 mb-2">Task Description</label>
               <textarea 
-                className="w-full h-32 bg-[#0f111a] border border-slate-700 rounded-lg p-3 text-slate-200 focus:outline-none focus:border-blue-500"
+                className="w-full h-28 bg-[#0f111a] border border-slate-700 rounded-lg p-3 text-slate-200 focus:outline-none focus:border-blue-500 font-mono text-sm"
                 value={taskDesc}
                 onChange={e => setTaskDesc(e.target.value)}
               />
@@ -70,43 +96,50 @@ export default function Dashboard() {
             <div>
               <label className="block text-sm font-medium text-slate-400 mb-2">Requirements (one per line)</label>
               <textarea 
-                className="w-full h-32 bg-[#0f111a] border border-slate-700 rounded-lg p-3 text-slate-200 focus:outline-none focus:border-blue-500"
+                className="w-full h-28 bg-[#0f111a] border border-slate-700 rounded-lg p-3 text-slate-200 focus:outline-none focus:border-blue-500 font-mono text-sm"
                 value={requirements}
                 onChange={e => setRequirements(e.target.value)}
               />
             </div>
             
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-4 pt-4">
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-4 pt-2">
               <div className="bg-[#0f111a] border border-slate-800 p-3 rounded-lg flex items-center justify-between">
                 <div className="flex items-center gap-2 text-sm text-slate-300">
-                  <Database className="w-4 h-4 text-purple-400" /> RAG
+                  <Database className="w-4 h-4 text-purple-400" /> RAG Context
                 </div>
-                <input type="checkbox" checked={useRag} onChange={e => setUseRag(e.target.checked)} className="w-4 h-4" />
+                <input type="checkbox" checked={useRag} onChange={e => setUseRag(e.target.checked)} className="w-4 h-4 accent-purple-500 cursor-pointer" />
               </div>
               <div className="bg-[#0f111a] border border-slate-800 p-3 rounded-lg flex items-center justify-between">
                 <div className="flex items-center gap-2 text-sm text-slate-300">
                   <Server className="w-4 h-4 text-green-400" /> Project Memory
                 </div>
-                <input type="checkbox" checked={useMemory} onChange={e => setUseMemory(e.target.checked)} className="w-4 h-4" />
+                <input type="checkbox" checked={useMemory} onChange={e => setUseMemory(e.target.checked)} className="w-4 h-4 accent-emerald-500 cursor-pointer" />
+              </div>
+              <div className="bg-[#0f111a] border border-slate-800 p-3 rounded-lg flex items-center justify-between">
+                <div className="flex items-center gap-2 text-sm text-slate-300">
+                  <CheckCircle className="w-4 h-4 text-amber-400" /> Human Approval
+                </div>
+                <input type="checkbox" checked={humanApproval} onChange={e => setHumanApproval(e.target.checked)} className="w-4 h-4 accent-amber-500 cursor-pointer" />
               </div>
               <div className="bg-[#0f111a] border border-slate-800 p-3 rounded-lg flex items-center justify-between">
                 <div className="flex items-center gap-2 text-sm text-slate-300">
                   <Settings className="w-4 h-4 text-slate-400" /> Provider
                 </div>
-                <select className="bg-transparent text-sm outline-none" value={provider} onChange={e => setProvider(e.target.value)}>
-                  <option value="groq">Groq</option>
-                  <option value="openrouter">OpenRouter</option>
-                  <option value="mock">Mock</option>
+                <select className="bg-transparent text-sm outline-none text-slate-200" value={provider} onChange={e => setProvider(e.target.value)}>
+                  <option value="groq" className="bg-[#0f111a]">Groq</option>
+                  <option value="gemini" className="bg-[#0f111a]">Gemini</option>
+                  <option value="openrouter" className="bg-[#0f111a]">OpenRouter</option>
+                  <option value="mock" className="bg-[#0f111a]">Mock (Deterministic)</option>
                 </select>
               </div>
             </div>
 
-            <div className="pt-6">
+            <div className="pt-4 flex items-center justify-between">
               <button 
                 onClick={handleStart}
-                className="bg-blue-600 hover:bg-blue-700 text-white font-medium py-2 px-6 rounded-lg transition-colors flex items-center gap-2"
+                className="bg-blue-600 hover:bg-blue-700 text-white font-medium py-2.5 px-6 rounded-lg transition-all duration-200 flex items-center gap-2 shadow-lg shadow-blue-600/30 active:scale-95"
               >
-                Start Run <Play className="w-4 h-4" />
+                Launch DevAgents Workflow <Play className="w-4 h-4 fill-white" />
               </button>
             </div>
           </div>
