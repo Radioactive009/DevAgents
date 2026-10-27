@@ -1,0 +1,112 @@
+Invalid \escape: line 30 column 731 (char 3776)
+
+Raw output:
+{
+    "project_name": "Task Management Application",
+    "files": [
+        {
+            "path": "package.json",
+            "content": "{\n  \"name\": \"task-management\",\n  \"private\": true,\n  \"version\": \"1.0.0\",\n  \"type\": \"module\",\n  \"scripts\": {\n    \"dev\": \"vite\",\n    \"build\": \"vite build\",\n    \"test\": \"jest --config jest.config.js\"\n  },\n  \"dependencies\": {\n    \"react\": \"^18.3.0\",\n    \"react-dom\": \"^18.3.0\",\n    \"react-router-dom\": \"^6.26.0\"\n  },\n  \"devDependencies\": {\n    \"@testing-library/react\": \"^14.3.0\",\n    \"@testing-library/jest-dom\": \"^6.4.5\",\n    \"@vitejs/plugin-react\": \"^3.1.0\",\n    \"jest\": \"^29.7.0\",\n    \"jest-environment-jsdom\": \"^29.7.0\",\n    \"vite\": \"^5.4.1\"\n  }\n}",
+            "description": "Project configuration with Vite, React, and testing dependencies",
+            "requirement_ids": ["REQ-001", "REQ-002", "REQ-003", "REQ-004", "REQ-005", "REQ-006", "REQ-007"]
+        },
+        {
+            "path": "vite.config.js",
+            "content": "import { defineConfig } from 'vite'\nimport react from '@vitejs/plugin-react'\n\nexport default defineConfig({\n  plugins: [react()],\n  test: {\n    globals: true,\n    environment: 'jsdom'\n  }\n})",
+            "description": "Vite configuration with React plugin and Jest test setup",
+            "requirement_ids": ["REQ-001", "REQ-002", "REQ-003", "REQ-004", "REQ-005", "REQ-006", "REQ-007"]
+        },
+        {
+            "path": "jest.config.js",
+            "content": "import { config as dotenvConfig } from 'dotenv'\ndotenvConfig.config\n\nexport default {\n  testEnvironment: 'jsdom',\n  setupFilesAfterLoad: ['@testing-library/jest-dom'],\n  globals: {\n    'ts-jest': {\n      tsconfig: 'tsconfig.json'\n    }\n  }\n}",
+            "description": "Jest configuration for React Testing Library",
+            "requirement_ids": ["REQ-007"]
+        },
+        {
+            "path": "src/components/TaskInput.jsx",
+            "content": "import { useState } from 'react'\n\nconst TaskInput = ({ onAddTask }) => {\n  const [inputValue, setInputValue] = useState('')\n  const inputRef = useRef(null)\n\n  const handleSubmit = (e) => {\n    e.preventDefault()\n    if (inputValue.trim()) {\n      onAddTask(inputValue)\n      setInputValue('')\n      inputRef.current.focus()\n    }\n  }\n\n  return (\n    <form onSubmit={handleSubmit} className=\"task-input-form\">\n      <input\n        ref={inputRef}\n        type=\"text\"\n        placeholder=\"Add new task...\"\n        value={inputValue}\n        onChange={(e) => setInputValue(e.target.value)}\n        required\n        className=\"task-input-field\"\n      />\n      <button\ntype=\"submit\"\n        className=\"task-input-button\"\n      >Add Task</button>\n    </form>\n  )\n}\n\nexport default TaskInput\n",
+            "description": "Component for adding new tasks to the application",
+            "requirement_ids": ["REQ-001"]
+        },
+        {
+            "path": "src/components/TaskItem.jsx",
+            "content": "import { useState } from 'react'\n\nconst TaskItem = ({ task, onToggle, onEdit, onDelete }) => {\n  const [isEditing, setIsEditing] = useState(false)\n  const [editTitle, setEditTitle] = useState(task.title)\n\n  const handleToggle = () => {\n    onToggle(task.id)\n  }\n\n  const handleEditStart = () => {\n    setIsEditing(true)\n    setEditTitle(task.title)\n  }\n\n  const handleEditSave = (e) => {\n    e.preventDefault()\n    const newTitle = e.target[0].value.trim()\n    if (newTitle) {\n      onEdit(task.id, newTitle)\n      setIsEditing(false)\n    }\n  }\n\n  const handleEditCancel = () => {\n    setIsEditing(false)\n    setEditTitle(task.title)\n  }\n\n  return (\n    <li\n      className={\`task-item \${task.completed ? 'completed' : ''} \${isEditing ? 'editing' : ''}\`}\n      style={{ textDecoration: task.completed ? 'line-through' : 'none' }}\n    >\n      {isEditing ? (\n        <form\n          onSubmit={handleEditSave}\n          className=\"edit-form\"\n        >\n          <input\n            type=\"text\"\n            value={editTitle}\n            onChange={(e) => setEditTitle(e.target.value)}\n            required\n            className=\"edit-input\"\n          />\n          <button\ntype=\"submit\"\n            className=\"edit-save-button\"\n          >Save</button>\n          <button\ntype=\"button\"\n            onClick={handleEditCancel}\n            className=\"edit-cancel-button\"\n          >Cancel</button>\n        </form>\n      ) : (\n        <span\n          className=\"task-title\"\n          onClick={handleEditStart}\n          style={{ cursor: 'pointer' }}\n        >\n          {task.title}\n        </span>\n      )}\n      <div className=\"task-actions\">\n        <button\n          className=\"toggle-button\"\n          onClick={handleToggle}\n          style={{ textDecoration: task.completed ? 'line-through' : 'none' }}\n        >\n          {task.completed ? 'Undo' : 'Complete'}\n        </button>\n        <button\n          className=\"edit-button\"\n          onClick={handleEditStart}\n          style={{ cursor: 'pointer' }}\n        >Edit</button>\n        <button\n          className=\"delete-button\"\n          onClick={() => onDelete(task.id)}\n          style={{ cursor: 'pointer' }}\n        >Delete</button>\n      </div>\n    </li>\n  )\n}\n\nexport default TaskItem\n",
+            "description": "Component representing a single task with toggle, edit, and delete actions",
+            "requirement_ids": ["REQ-002", "REQ-003", "REQ-004"]
+        },
+        {
+            "path": "src/components/TaskList.jsx",
+            "content": "import { useState } from 'react'\nimport TaskItem from './TaskItem'\n\nconst TaskList = ({ tasks, onToggle, onEdit, onDelete }) => {\n  return (\n    <ul className=\"task-list\" style={{ listStyle: 'none', padding: 0 }}>\n      {tasks.map((task) => (\n        <TaskItem\n          key={task.id}\n          task={task}\n          onToggle={onToggle}\n          onEdit={onEdit}\n          onDelete={onDelete}\n        />\n      ))}\n    </ul>\n  )\n}\n\nexport default TaskList\n",
+            "description": "Component for displaying all tasks from state",
+            "requirement_ids": ["REQ-001", "REQ-002", "REQ-003", "REQ-004", "REQ-005"]
+        },
+        {
+            "path": "src/components/TaskFilter.jsx",
+            "content": "import { useState } from 'react'\n\nconst TaskFilter = ({ filter, onFilterChange }) => {\n  return (\n    <div className=\"task-filter\" style={{ display: 'flex', gap: '10px', marginTop: '15px' }}>\n      <button\n        className={\`filter-button \${filter === 'all' ? 'active' : ''}`}\n        onClick={() => onFilterChange('all')}\n        style={{ padding: '8px 16px', border: '1px solid #ccc', borderRadius: '4px', background: filter === 'all' ? '#e0e0e0' : 'white', cursor: 'pointer' }}\n      >\n        All\n      </button>\n      <button\n        className={\`filter-button \${filter === 'active' ? 'active' : ''}`}\n        onClick={() => onFilterChange('active')}\n        style={{ padding: '8px 16px', border: '1px solid #ccc', borderRadius: '4px', background: filter === 'active' ? '#e0e0e0' : 'white', cursor: 'pointer' }}\n      >\n        Active\n      </button>\n      <button\n        className={\`filter-button \${filter === 'completed' ? 'active' : ''}`}\n        onClick={() => onFilterChange('completed')}\n        style={{ padding: '8px 16px', border: '1px solid #ccc', borderRadius: '4px', background: filter === 'completed' ? '#e0e0e0' : 'white', cursor: 'pointer' }}\n      >\n        Completed\n      </button>\n    </div>\n  )\n}\n\nexport default TaskFilter\n",
+            "description": "Component providing filter buttons (All, Active, Completed)",
+            "requirement_ids": ["REQ-005"]
+        },
+        {
+            "path": "src/App.jsx",
+            "content": "import { useState } from 'react'\nimport TaskInput from './components/TaskInput'\nimport TaskList from './components/TaskList'\nimport TaskFilter from './components/TaskFilter'\n\nconst App = () => {\n  const [tasks, setTasks] = useState([])\n  const [filter, setFilter] = useState('all')\n\n  const addTask = (title) => {\n    setTasks((prev) => [...prev, { id: Date.now(), title, completed: false }])\n  }\n\n  const toggleTask = (id) => {\n    setTasks((prev) =>\n      prev.map((task) =>\n        task.id === id ? { ...task, completed: !task.completed } : task\n      )\n    )\n  }\n\n  const editTask = (id, newTitle) => {\n    setTasks((prev) =>\n      prev.map((task) =>\n        task.id === id ? { ...task, title: newTitle } : task\n      )\n    )\n  }\n\n  const deleteTask = (id) => {\n    setTasks((prev) => prev.filter((task) => task.id !== id))\n  }\n\n  const filteredTasks = () => {\n    if (filter === 'all') return tasks\n    if (filter === 'active') return tasks.filter((t) => !t.completed)\n    if (filter === 'completed') return tasks.filter((t) => t.completed)\n    return tasks\n  }\n\n  const handleFilterChange = (newFilter) => {\n    setFilter(newFilter)\n  }\n\n  return (\n    <div style={{ maxWidth: '600px', margin: '0 auto', padding: '20px' }}>\n      <h1 style={{ textAlign: 'center', marginBottom: '20px' }}>Task Manager</h1>\n      <TaskInput onAddTask={addTask} />\n      <TaskList\n        tasks={filteredTasks()}\n        onToggle={toggleTask}\n        onEdit={editTask}\n        onDelete={deleteTask}\n      />\n      <TaskFilter filter={filter} onFilterChange={handleFilterChange} />\n    </div>\n  )\n}\n\nexport default App\n",
+            "description": "Main application component with task state management and filtering",
+            "requirement_ids": ["REQ-001", "REQ-002", "REQ-003", "REQ-004", "REQ-005"]
+        },
+        {
+            "path": "src/index.js",
+            "content": "import { createRoot } from 'react-dom/client'\nimport App from './App.jsx'\n\nconst root = createRoot(document.getElementById('root'))\nroot.render(\n  <React.StrictMode>\n    <App />\n  </React.StrictMode>\n)",
+            "description": "React root rendering entry point",
+            "requirement_ids": ["REQ-001", "REQ-002", "REQ-003", "REQ-004", "REQ-005"]
+        },
+        {
+            "path": "public/index.html",
+            "content": "<!DOCTYPE html>\n<html lang=\"en\">\n<head>\n  <meta charset=\"UTF-8\" />\n  <meta name=\"viewport\" content=\"width=device-width, initial-scale=1.0\" />\n  <title>Task Management App</title>\n  <style>\n    body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; margin: 0; padding: 0; background: #f5f5f5; }\n    .container { max-width: 800px; margin: 0 auto; padding: 20px; }\n    @media (max-width: 600px) {\n      .container { padding: 10px; }\n      h1 { font-size: 1.5rem; }\n      .task-input-form { flex-direction: column; gap: 10px; }\n      .task-input-form input { width: 100%; }\n      .filter-button { width: 100%; text-align: left; padding: 8px; }\n    }\n  </style>\n</head>\n<body>\n  <div id=\"root\"></div>\n  <script type=\"module\" src=\"/src/index.js\"></script>\n</body>\n</html>",
+            "description": "HTML entry point with responsive CSS for mobile and desktop",
+            "requirement_ids": ["REQ-006"]
+        },
+        {
+            "path": "src/components/TaskItem.test.jsx",
+            "content": "import { render, screen, fireEvent } from '@testing-library/react'\nimport TaskItem from './TaskItem'\n\ntest('renders task title', () => {\n  render(\n    <TaskItem\n      task={{ id: 1, title: 'Test Task', completed: false }}\n      onToggle={() => {}}\n      onEdit={() => {}}\n      onDelete={() => {}}\n    />\n  )\n  expect(screen.getByText('Test Task')).toBeInTheDocument()\n})\n\ntest('toggles task completion', () => {\n  const onToggle = jest.fn()\n  render(\n    <TaskItem\n      task={{ id: 1, title: 'Test Task', completed: false }}\n      onToggle={onToggle}\n      onEdit={() => {}}\n      onDelete={() => {}}\n    />\n  )\n  fireEvent.click(screen.getByText('Complete'))\n  expect(onToggle).toHaveBeenCalledWith(1)\n})\n\ntest('deletes task', () => {\n  const onDelete = jest.fn()\n  render(\n    <TaskItem\n      task={{ id: 1, title: 'Test Task', completed: false }}\n      onToggle={() => {}}\n      onEdit={() => {}}\n      onDelete={onDelete}\n    />\n  )\n  fireEvent.click(screen.getByText('Delete'))\n  expect(onDelete).toHaveBeenCalledWith(1)\n})\n\ntest('edits task title', () => {\n  const onEdit = jest.fn()\n  render(\n    <TaskItem\n      task={{ id: 1, title: 'Old Title', completed: false }}\n      onToggle={() => {}}\n      onEdit={onEdit}\n      onDelete={() => {}}\n    />\n  )\n  fireEvent.click(screen.getByText('Old Title'))\n  expect(onEdit).toHaveBeenCalledWith(1, 'Old Title')\n})\n",
+            "description": "Tests for TaskItem component covering toggle, delete, and edit functionality",
+            "requirement_ids": ["REQ-002", "REQ-003", "REQ-004"]
+        },
+        {
+            "path": "src/components/TaskList.test.jsx",
+            "content": "import { render, screen } from '@testing-library/react'\nimport TaskList from './TaskList'\n\ntest('renders list of tasks', () => {\n  render(\n    <TaskList\n      tasks={[\n        { id: 1, title: 'Task 1', completed: false },\n        { id: 2, title: 'Task 2', completed: true }\n      ]}\n      onToggle={() => {}}\n      onEdit={() => {}}\n      onDelete={() => {}}\n    />\n  )\n  expect(screen.getByText('Task 1')).toBeInTheDocument()\n  expect(screen.getByText('Task 2')).toBeInTheDocument()\n})\n",
+            "description": "Tests for TaskList component rendering tasks from state",
+            "requirement_ids": ["REQ-001", "REQ-002", "REQ-003", "REQ-004", "REQ-005"]
+        },
+        {
+            "path": "src/components/TaskFilter.test.jsx",
+            "content": "import { render, screen } from '@testing-library/react'\nimport TaskFilter from './TaskFilter'\n\ntest('renders filter buttons', () => {\n  render(\n    <TaskFilter\n      filter=\"all\"\n      onFilterChange={() => {}}\n    />\n  )\n  expect(screen.getByText('All')).toBeInTheDocument()\n  expect(screen.getByText('Active')).toBeInTheDocument()\n  expect(screen.getByText('Completed')).toBeInTheDocument()\n})\n\ntest('applies active filter class', () => {\n  const onFilterChange = jest.fn()\n  render(\n    <TaskFilter\n      filter=\"active\"\n      onFilterChange={onFilterChange}\n    />\n  )\n  expect(screen.getByText('Active')).toHaveClass('active')\n})\n",
+            "description": "Tests for TaskFilter component filtering functionality",
+            "requirement_ids": ["REQ-005"]
+        },
+        {
+            "path": "src/App.test.jsx",
+            "content": "import { render, screen } from '@testing-library/react'\nimport App from '../App'\n\ntest('can add a new task', () => {\n  render(<App />)\n  const input = screen.getByRole('textbox', { name: /add new task/i })\n  const addButton = screen.getByRole('button', { name: /add task/i })\n  input.value = 'Test task'\n  fireEvent.change(input)\n  fireEvent.click(addButton)\n  expect(screen.getByText('Test task')).toBeInTheDocument()\n})\n\ntest('can edit a task title', () => {\n  render(<App />)\n  // Add a task first\n  const input = screen.getByRole('textbox', { name: /add new task/i })\n  const addButton = screen.getByRole('button', { name: /add task/i })\n  input.value = 'Edit me'\n  fireEvent.change(input)\n  fireEvent.click(addButton)\n  // Click on task title to enter edit mode\n  const taskTitle = screen.getByText('Edit me')\n  fireEvent.click(taskTitle)\n  const editInput = screen.getByRole('textbox', { name: /old title/i })\n  expect(editInput).toBeInTheDocument()\n})\n\ntest('can mark task as completed', () => {\n  render(<App />)\n  const input = screen.getByRole('textbox', { name: /add new task/i })\n  const addButton = screen.getByRole('button', { name: /add task/i })\n  input.value = 'Complete me'\n  fireEvent.change(input)\n  fireEvent.click(addButton)\n  const toggleButton = screen.getByText('Complete')\n  fireEvent.click(toggleButton)\n  expect(screen.getByText('Complete me')).toHaveStyle({ textDecoration: 'line-through' })\n})\n\ntest('can delete a task', () => {\n  render(<App />)\n  const input = screen.getByRole('textbox', { name: /add new task/i })\n  const addButton = screen.getByRole('button', { name: /add task/i })\n  input.value = 'To delete'\n  fireEvent.change(input)\n  fireEvent.click(addButton)\n  const deleteButton = screen.getByText('Delete')\n  fireEvent.click(deleteButton)\n  expect(screen.getByText('To delete')).not.toBeInTheDocument()\n})\n\ntest('filters active tasks', () => {\n  render(<App />)\n  // Add an active task\n  const input = screen.getByRole('textbox', { name: /add new task/i })\n  const addButton = screen.getByRole('button', { name: /add task/i })\n  input.value = 'Active task'\n  fireEvent.change(input)\n  fireEvent.click(addButton)\n  // Add a completed task\n  input.value = 'Completed task'\n  fireEvent.change(input)\n  fireEvent.click(addButton)\n  // Mark first task as completed\n  const toggleButton = screen.getByText('Complete')\n  fireEvent.click(toggleButton)\n  // Filter to active\n  const filterButtons = screen.getAllByRole('button', { name: /all|active|completed/i })\n  filterButtons[1].click() // Active\n  expect(screen.getAllByText('Active task')).toHaveLength(1)\n  expect(screen.getAllByText('Completed task')).not.toBeInTheDocument()\n})\n\ntest('filters completed tasks', () => {\n  render(<App />)\n  const input = screen.getByRole('textbox', { name: /add new task/i })\n  const addButton = screen.getByRole('button', { name: /add task/i })\n  input.value = 'Completed task'\n  fireEvent.change(input)\n  fireEvent.click(addButton)\n  const toggleButton = screen.getByText('Complete')\n  fireEvent.click(toggleButton)\n  // Filter to completed\n  const filterButtons = screen.getAllByRole('button', { name: /all|active|completed/i })\n  filterButtons[2].click() // Completed\n  expect(screen.getAllByText('Completed task')).toHaveLength(1)\n})\n\ntest('filters all tasks', () => {\n  render(<App />)\n  const input = screen.getByRole('textbox', { name: /add new task/i })\n  const addButton = screen.getByRole('button', { name: /add task/i })\n  input.value = 'Task 1'\n  fireEvent.change(input)\n  fireEvent.click(addButton)\n  input.value = 'Task 2'\n  fireEvent.change(input)\n  fireEvent.click(addButton)\n  // Filter to all\n  const filterButtons = screen.getAllByRole('button', { name: /all|active|completed/i })\n  filterButtons[0].click() // All\n  expect(screen.getAllByText('Task 1')).toBeInTheDocument()\n  expect(screen.getAllByText('Task 2')).toBeInTheDocument()\n})\n",
+            "description": "Comprehensive tests for App component covering add, edit, delete, complete, and filter functionality",
+            "requirement_ids": ["REQ-001", "REQ-002", "REQ-003", "REQ-004", "REQ-005", "REQ-007"]
+        }
+    ],
+    "entrypoint": "public/index.html",
+    "run_command": "npm run dev",
+    "test_command": "npm test",
+    "dependencies": [
+      "react",
+      "react-dom",
+      "vite",
+      "@testing-library/react",
+      "@testing-library/jest-dom",
+      "jest"
+    ],
+    "requirement_coverage": {
+      "REQ-001": ["src/components/TaskInput.jsx", "src/App.test.jsx"],
+      "REQ-002": ["src/components/TaskItem.jsx", "src/App.test.jsx"],
+      "REQ-003": ["src/components/TaskItem.jsx", "src/App.test.jsx"],
+      "REQ-004": ["src/components/TaskItem.jsx", "src/App.test.jsx"],
+      "REQ-005": ["src/components/TaskFilter.jsx", "src/App.test.jsx", "src/components/TaskList.test.jsx"],
+      "REQ-006": ["public/index.html"],
+      "REQ-007": ["src/components/TaskItem.test.jsx", "src/components/TaskList.test.jsx", "src/components/TaskFilter.test.jsx", "src/App.test.jsx"]
+    }
+  }

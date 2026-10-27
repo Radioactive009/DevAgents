@@ -2,11 +2,8 @@ import os
 import sys
 import time
 
-try:
-    from dotenv import load_dotenv
-    load_dotenv()
-except ImportError:
-    pass
+from dotenv import load_dotenv
+load_dotenv()
 
 from llm.factory import create_llm_provider
 

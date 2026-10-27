@@ -138,8 +138,8 @@ export default function Dashboard() {
               <div className="text-xs text-slate-400">
                 <span className="font-semibold text-slate-300">Default Model: </span>
                 {provider === 'openrouter' && <span className="font-mono text-emerald-400">nvidia/nemotron-3.5-lightning:free</span>}
-                {provider === 'groq' && <span className="font-mono text-blue-400">qwen/qwen3.8-27b</span>}
-                {provider === 'gemini' && <span className="font-mono text-purple-400">gemini-3.8-flash</span>}
+                {provider === 'groq' && <span className="font-mono text-blue-400">llama-3.3-70b-versatile</span>}
+                {provider === 'gemini' && <span className="font-mono text-purple-400">gemini-2.5-flash-lite</span>}
                 {provider === 'mock' && <span className="font-mono text-amber-400">deterministic-mock</span>}
               </div>
               <div className="flex items-center gap-2">

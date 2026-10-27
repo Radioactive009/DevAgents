@@ -1,6 +1,18 @@
 {
   "python.defaultInterpreterPath": "C:\\Users\\kisla\\AppData\\Local\\Programs\\Python\\Python313\\python.exe",
+  "python.pythonPath": "C:\\Users\\kisla\\AppData\\Local\\Programs\\Python\\Python313\\python.exe",
   "python.analysis.extraPaths": [
-    "."
-  ]
+    ".",
+    "C:\\Users\\kisla\\AppData\\Local\\Programs\\Python\\Python313\\Lib\\site-packages",
+    "C:\\Users\\kisla\\AppData\\Roaming\\uv\\python\\cpython-3.14.6-windows-x86_64-none\\Lib\\site-packages"
+  ],
+  "python.autoComplete.extraPaths": [
+    ".",
+    "C:\\Users\\kisla\\AppData\\Local\\Programs\\Python\\Python313\\Lib\\site-packages",
+    "C:\\Users\\kisla\\AppData\\Roaming\\uv\\python\\cpython-3.14.6-windows-x86_64-none\\Lib\\site-packages"
+  ],
+  "python.analysis.diagnosticSeverityOverrides": {
+    "reportMissingImports": "none",
+    "reportMissingModuleSource": "none"
+  }
 }

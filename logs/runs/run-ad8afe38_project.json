@@ -1,0 +1,222 @@
+{
+  "project_name": "markdown-live-preview-editor",
+  "files": [
+    {
+      "path": "public/index.html",
+      "content": "<!DOCTYPE html>\n<html lang=\"en\">\n<head>\n    <meta charset=\"UTF-8\">\n    <meta name=\"viewport\" content=\"width=device-width, initial-scale=1.0\">\n    <title>Markdown Live Preview Editor</title>\n    <link rel=\"stylesheet\" href=\"/src/styles/styles.css\">\n</head>\n<body>\n    <div id=\"root\"></div>\n    <script src=\"https://unpkg.com/react/umd/react.development.js\"></script>\n    <script src=\"https://unpkg.com/react-dom/umd/react-dom.development.js\"></script>\n    <script src=\"https://cdn.jsdelivr.net/npm/marked/marked.min.js\"></script>\n    <script src=\"/src/index.js\"></script>\n</body>\n</html>\n",
+      "description": "The main HTML file for the React application, including CDN links for React, ReactDOM, and marked.js, and the root element for React to mount.",
+      "requirement_ids": []
+    },
+    {
+      "path": "src/index.js",
+      "content": "import React from 'react';\nimport ReactDOM from 'react-dom';\nimport App from './App';\n\nReactDOM.render(\n  <React.StrictMode>\n    <App />\n  </React.StrictMode>,\n  document.getElementById('root')\n);\n",
+      "description": "The entry point for the React application, rendering the main App component.",
+      "requirement_ids": []
+    },
+    {
+      "path": "src/App.js",
+      "content": "import React, { useState, useEffect } from 'react';\nimport SplitPane from './components/SplitPane';\nimport Toolbar from './components/Toolbar';\nimport Editor from './components/Editor';\nimport Preview from './components/Preview';\nimport StatusBar from './components/StatusBar';\nimport { parseMarkdown } from './utils/markdownParser';\nimport { countWords, countCharacters } from './utils/countUtils';\nimport './styles/styles.css';\n\nfunction App() {\n  const [markdown, setMarkdown] = useState('');\n  const [html, setHtml] = useState('');\n  const [wordCount, setWordCount] = useState(0);\n  const [charCount, setCharCount] = useState(0);\n\n  useEffect(() => {\n    const parsedHtml = parseMarkdown(markdown);\n    setHtml(parsedHtml);\n    setWordCount(countWords(markdown));\n    setCharCount(countCharacters(markdown));\n  }, [markdown]);\n\n  const handleMarkdownChange = (newMarkdown) => {\n    setMarkdown(newMarkdown);\n  };\n\n  const handleToolbarClick = (syntax) => {\n    setMarkdown(prevMarkdown => prevMarkdown + syntax);\n  };\n\n  return (\n    <div className=\"app-container\">\n      <Toolbar onButtonClick={handleToolbarClick} />\n      <SplitPane>\n        <Editor value={markdown} onChange={handleMarkdownChange} />\n        <Preview html={html} />\n      </SplitPane>\n      <StatusBar wordCount={wordCount} charCount={charCount} />\n    </div>\n  );\n}\n\nexport default App;\n",
+      "description": "The main application component that manages state for markdown content, parsed HTML, and counts. It orchestrates the layout and data flow between other components.",
+      "requirement_ids": [
+        "REQ-001",
+        "REQ-003",
+        "REQ-004",
+        "REQ-005",
+        "REQ-006"
+      ]
+    },
+    {
+      "path": "src/components/SplitPane.js",
+      "content": "import React from 'react';\nimport './SplitPane.css';\n\nfunction SplitPane({ children }) {\n  return (\n    <div className=\"split-pane-container\">\n      {children}\n    </div>\n  );\n}\n\nexport default SplitPane;\n",
+      "description": "A component that manages the responsive split-screen layout, dividing the view into editor and preview panes.",
+      "requirement_ids": [
+        "REQ-001",
+        "REQ-002"
+      ]
+    },
+    {
+      "path": "src/components/SplitPane.css",
+      "content": ".split-pane-container {\n  display: flex;\n  flex-grow: 1;\n  overflow: hidden;\n}\n\n.split-pane-container > div {\n  flex: 1;\n  overflow-y: auto;\n  padding: 15px;\n  box-sizing: border-box;\n}\n\n/* Responsive adjustments */\n@media (max-width: 768px) {\n  .split-pane-container {\n    flex-direction: column;\n  }\n  .split-pane-container > div {\n    flex: none;\n    width: 100%;\n    height: 50%;\n  }\n}\n",
+      "description": "CSS for the split-pane layout, ensuring responsiveness and proper sizing.",
+      "requirement_ids": [
+        "REQ-001",
+        "REQ-002"
+      ]
+    },
+    {
+      "path": "src/components/Toolbar.js",
+      "content": "import React from 'react';\nimport './Toolbar.css';\n\nfunction Toolbar({ onButtonClick }) {\n  const buttons = [\n    { label: 'B', syntax: '**' },\n    { label: 'I', syntax: '*' },\n    { label: 'H1', syntax: '# ' },\n    { label: 'H2', syntax: '## ' },\n    { label: 'Code', syntax: '```\\n' }\n  ];\n\n  return (\n    <div className=\"toolbar\">\n      {buttons.map((button, index) => (\n        <button\n          key={index}\n          onClick={() => onButtonClick(button.syntax)}\n          className=\"toolbar-button\"\n        >\n          {button.label}\n        </button>\n      ))}\n    </div>\n  );\n}\n\nexport default Toolbar;\n",
+      "description": "The toolbar component providing buttons for Markdown formatting.",
+      "requirement_ids": [
+        "REQ-005"
+      ]
+    },
+    {
+      "path": "src/components/Toolbar.css",
+      "content": ".toolbar {\n  display: flex;\n  padding: 10px;\n  background-color: var(--background-secondary);\n  border-bottom: 1px solid var(--border-color);\n  flex-shrink: 0;\n}\n\n.toolbar-button {\n  background-color: var(--button-background);\n  color: var(--text-primary);\n  border: 1px solid var(--border-color);\n  padding: 8px 12px;\n  margin-right: 5px;\n  cursor: pointer;\n  border-radius: 4px;\n  font-weight: bold;\n  transition: background-color 0.2s ease;\n}\n\n.toolbar-button:hover {\n  background-color: var(--button-hover-background);\n}\n",
+      "description": "CSS for the toolbar component.",
+      "requirement_ids": [
+        "REQ-005",
+        "REQ-003"
+      ]
+    },
+    {
+      "path": "src/components/Editor.js",
+      "content": "import React from 'react';\nimport './Editor.css';\n\nfunction Editor({ value, onChange }) {\n  const handleChange = (event) => {\n    onChange(event.target.value);\n  };\n\n  return (\n    <div className=\"editor-container\">\n      <textarea\n        className=\"editor-textarea\"\n        value={value}\n        onChange={handleChange}\n        placeholder=\"Start writing your Markdown here...\"\n      />\n    </div>\n  );\n}\n\nexport default Editor;\n",
+      "description": "The editor component containing the Markdown input textarea.",
+      "requirement_ids": [
+        "REQ-001",
+        "REQ-005"
+      ]
+    },
+    {
+      "path": "src/components/Editor.css",
+      "content": ".editor-container {\n  width: 100%;\n  height: 100%;\n}\n\n.editor-textarea {\n  width: 100%;\n  height: 100%;\n  padding: 15px;\n  border: none;\n  outline: none;\n  resize: none;\n  font-family: 'Courier New', Courier, monospace;\n  font-size: 16px;\n  line-height: 1.6;\n  background-color: var(--background-primary);\n  color: var(--text-primary);\n  box-sizing: border-box;\n}\n",
+      "description": "CSS for the editor textarea, ensuring it fills its container and has a monospaced font.",
+      "requirement_ids": [
+        "REQ-001",
+        "REQ-003"
+      ]
+    },
+    {
+      "path": "src/components/Preview.js",
+      "content": "import React from 'react';\nimport './Preview.css';\n\nfunction Preview({ html }) {\n  return (\n    <div className=\"preview-container\">\n      <div\n        className=\"preview-content\"\n        dangerouslySetInnerHTML={{ __html: html }}\n      />\n    </div>\n  );\n}\n\nexport default Preview;\n",
+      "description": "The preview component that renders the parsed HTML content.",
+      "requirement_ids": [
+        "REQ-001",
+        "REQ-004",
+        "REQ-007"
+      ]
+    },
+    {
+      "path": "src/components/Preview.css",
+      "content": ".preview-container {\n  width: 100%;\n  height: 100%;\n  overflow-y: auto;\n}\n\n.preview-content {\n  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;\n  line-height: 1.7;\n  color: var(--text-primary);\n  background-color: var(--background-primary);\n}\n\n.preview-content h1, .preview-content h2, .preview-content h3 {\n  color: var(--heading-color);\n  margin-top: 1.5em;\n  margin-bottom: 0.5em;\n}\n\n.preview-content h1 {\n  font-size: 2.2em;\n  border-bottom: 1px solid var(--border-color);\n  padding-bottom: 0.3em;\n}\n\n.preview-content h2 {\n  font-size: 1.8em;\n  border-bottom: 1px solid var(--border-color);\n  padding-bottom: 0.3em;\n}\n\n.preview-content h3 {\n  font-size: 1.5em;\n}\n\n.preview-content p {\n  margin-bottom: 1em;\n}\n\n.preview-content a {\n  color: var(--link-color);\n  text-decoration: none;\n}\n\n.preview-content a:hover {\n  text-decoration: underline;\n}\n\n.preview-content code {\n  font-family: 'Courier New', Courier, monospace;\n  background-color: var(--code-background);\n  color: var(--code-color);\n  padding: 0.2em 0.4em;\n  border-radius: 3px;\n  font-size: 0.9em;\n}\n\n.preview-content pre {\n  background-color: var(--code-background);\n  padding: 1em;\n  border-radius: 5px;\n  overflow-x: auto;\n}\n\n.preview-content pre code {\n  background-color: transparent;\n  color: var(--code-color);\n  padding: 0;\n  font-size: 0.95em;\n}\n\n.preview-content blockquote {\n  border-left: 4px solid var(--border-color);\n  padding-left: 1em;\n  margin-left: 0;\n  color: var(--blockquote-color);\n  font-style: italic;\n}\n\n.preview-content ul, .preview-content ol {\n  margin-bottom: 1em;\n  padding-left: 2em;\n}\n\n.preview-content li {\n  margin-bottom: 0.5em;\n}\n",
+      "description": "CSS for the preview content, applying styled typography and dark theme compatibility.",
+      "requirement_ids": [
+        "REQ-001",
+        "REQ-003",
+        "REQ-007"
+      ]
+    },
+    {
+      "path": "src/components/StatusBar.js",
+      "content": "import React from 'react';\nimport './StatusBar.css';\n\nfunction StatusBar({ wordCount, charCount }) {\n  return (\n    <div className=\"status-bar\">\n      <span className=\"status-item\">Words: {wordCount}</span>\n      <span className=\"status-item\">Characters: {charCount}</span>\n    </div>\n  );\n}\n\nexport default StatusBar;\n",
+      "description": "The status bar component displaying word and character counts.",
+      "requirement_ids": [
+        "REQ-006"
+      ]
+    },
+    {
+      "path": "src/components/StatusBar.css",
+      "content": ".status-bar {\n  display: flex;\n  justify-content: flex-end;\n  padding: 8px 15px;\n  background-color: var(--background-secondary);\n  color: var(--text-secondary);\n  font-size: 0.9em;\n  border-top: 1px solid var(--border-color);\n  flex-shrink: 0;\n}\n\n.status-item {\n  margin-left: 20px;\n}\n",
+      "description": "CSS for the status bar.",
+      "requirement_ids": [
+        "REQ-006",
+        "REQ-003"
+      ]
+    },
+    {
+      "path": "src/styles/styles.css",
+      "content": ":root {\n  /* Dark Theme Colors */\n  --background-primary: #1e1e1e;\n  --background-secondary: #252526;\n  --text-primary: #d4d4d4;\n  --text-secondary: #888888;\n  --border-color: #444444;\n  --button-background: #3a3a3a;\n  --button-hover-background: #4a4a4a;\n  --heading-color: #ffffff;\n  --link-color: #00aaff;\n  --code-background: #333333;\n  --code-color: #ce9178;\n  --blockquote-color: #888888;\n}\n\nbody {\n  margin: 0;\n  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;\n  background-color: var(--background-primary);\n  color: var(--text-primary);\n  display: flex;\n  flex-direction: column;\n  height: 100vh;\n  overflow: hidden;\n}\n\n.app-container {\n  display: flex;\n  flex-direction: column;\n  height: 100vh;\n  overflow: hidden;\n}\n\n/* Basic Reset for HTML elements in preview */\nh1, h2, h3, p, ul, ol, li, blockquote, code, pre, a {\n  margin: 0;\n  padding: 0;\n}\n",
+      "description": "Global CSS file for the application, including dark theme variables and basic body/app container styling.",
+      "requirement_ids": [
+        "REQ-003"
+      ]
+    },
+    {
+      "path": "src/utils/markdownParser.js",
+      "content": "import { marked } from 'marked';\n\n// Configure marked.js for security and desired output\nmarked.setOptions({\n  renderer: new marked.Renderer(),\n  highlight: function (code, lang) {\n    const hljs = require('highlight.js');\n    const language = hljs.getLanguage(lang) ? lang : 'plaintext';\n    return hljs.highlight(code, { language }).value;\n  },\n  langPrefix: 'hljs language-',\n  pedantic: false,\n  gfm: true,\n  breaks: false,\n  sanitize: true, // Important for security: removes HTML tags\n  smartLists: true,\n  smartypants: true,\n  xhtml: false\n});\n\nexport const parseMarkdown = (markdownText) => {\n  if (!markdownText) {\n    return '';\n  }\n  try {\n    return marked.parse(markdownText);\n  } catch (error) {\n    console.error(\"Error parsing markdown:\", error);\n    return '<p>Error rendering markdown.</p>';\n  }\n};\n",
+      "description": "Utility function to parse Markdown text into HTML using the 'marked.js' library. Includes basic security sanitization.",
+      "requirement_ids": [
+        "REQ-004",
+        "REQ-008"
+      ]
+    },
+    {
+      "path": "src/utils/countUtils.js",
+      "content": "export const countWords = (text) => {\n  if (!text) {\n    return 0;\n  }\n  const words = text.trim().split(/\\s+/).filter(word => word.length > 0);\n  return words.length;\n};\n\nexport const countCharacters = (text) => {\n  if (!text) {\n    return 0;\n  }\n  return text.length;\n};\n",
+      "description": "Utility functions for counting words and characters in a given text.",
+      "requirement_ids": [
+        "REQ-006",
+        "REQ-008"
+      ]
+    },
+    {
+      "path": "src/tests/markdownParser.test.js",
+      "content": "import { parseMarkdown } from '../utils/markdownParser';\n\ndescribe('markdownParser', () => {\n  test('should parse basic bold markdown', () => {\n    const markdown = '**bold text**';\n    const expectedHtml = '<p><strong>bold text</strong></p>';\n    expect(parseMarkdown(markdown)).toBe(expectedHtml);\n  });\n\n  test('should parse basic italic markdown', () => {\n    const markdown = '*italic text*';\n    const expectedHtml = '<p><em>italic text</em></p>';\n    expect(parseMarkdown(markdown)).toBe(expectedHtml);\n  });\n\n  test('should parse H1 heading', () => {\n    const markdown = '# Heading 1';\n    const expectedHtml = '<h1>Heading 1</h1>';\n    expect(parseMarkdown(markdown)).toBe(expectedHtml);\n  });\n\n  test('should parse H2 heading', () => {\n    const markdown = '## Heading 2';\n    const expectedHtml = '<h2>Heading 2</h2>';\n    expect(parseMarkdown(markdown)).toBe(expectedHtml);\n  });\n\n  test('should parse code block', () => {\n    const markdown = '```\\nconsole.log(\"hello\");\\n```';\n    const expectedHtml = '<pre><code class=\"language-plaintext\">console.log(&quot;hello&quot;);\\n</code></pre>';\n    expect(parseMarkdown(markdown)).toBe(expectedHtml);\n  });\n\n  test('should parse mixed markdown', () => {\n    const markdown = '# Title\\n\\nThis is a paragraph with **bold** and *italic* text.';\n    const expectedHtml = '<h1>Title</h1><p>This is a paragraph with <strong>bold</strong> and <em>italic</em> text.</p>';\n    expect(parseMarkdown(markdown)).toBe(expectedHtml);\n  });\n\n  test('should return empty string for empty input', () => {\n    expect(parseMarkdown('')).toBe('');\n  });\n\n  test('should handle null input gracefully', () => {\n    expect(parseMarkdown(null)).toBe('');\n  });\n\n  test('should sanitize HTML tags', () => {\n    const markdown = '<script>alert(\"XSS\")</script>';\n    const expectedHtml = '<p>&lt;script&gt;alert(&quot;XSS&quot;)&lt;/script&gt;</p>';\n    expect(parseMarkdown(markdown)).toBe(expectedHtml);\n  });\n});\n",
+      "description": "Unit tests for the markdownParser utility function, validating various Markdown syntaxes and security aspects.",
+      "requirement_ids": [
+        "REQ-004",
+        "REQ-008"
+      ]
+    },
+    {
+      "path": "src/tests/countUtils.test.js",
+      "content": "import { countWords, countCharacters } from '../utils/countUtils';\n\ndescribe('countUtils', () => {\n  describe('countWords', () => {\n    test('should return 0 for empty string', () => {\n      expect(countWords('')).toBe(0);\n    });\n\n    test('should return 0 for string with only whitespace', () => {\n      expect(countWords('   \\n  \\t ')).toBe(0);\n    });\n\n    test('should count words correctly', () => {\n      expect(countWords('Hello world')).toBe(2);\n      expect(countWords('This is a test sentence.')).toBe(5);\n      expect(countWords('One')).toBe(1);\n    });\n\n    test('should handle multiple spaces between words', () => {\n      expect(countWords('Hello   world')).toBe(2);\n    });\n\n    test('should handle leading/trailing spaces', () => {\n      expect(countWords('  Hello world  ')).toBe(2);\n    });\n  });\n\n  describe('countCharacters', () => {\n    test('should return 0 for empty string', () => {\n      expect(countCharacters('')).toBe(0);\n    });\n\n    test('should count characters correctly', () => {\n      expect(countCharacters('Hello world')).toBe(11);\n      expect(countCharacters('Test')).toBe(4);\n      expect(countCharacters('\\n')).toBe(1);\n    });\n\n    test('should handle null input', () => {\n      expect(countCharacters(null)).toBe(0);\n    });\n  });\n});\n",
+      "description": "Unit tests for the countUtils utility functions, validating word and character counting logic.",
+      "requirement_ids": [
+        "REQ-006",
+        "REQ-008"
+      ]
+    }
+  ],
+  "entrypoint": "public/index.html",
+  "run_command": "To run this application, you would typically use a development server. If you have Node.js and npm/yarn installed, navigate to the project root in your terminal and run:\n\n1. Install dependencies: `npm install` or `yarn install`\n2. Start the development server: `npm start` or `yarn start` (This assumes a setup like Create React App or a similar build tool that provides a start script).\n\nAlternatively, you can open `public/index.html` directly in your browser, but this won't include hot-reloading or advanced features.",
+  "test_command": "To run the unit tests, navigate to the project root in your terminal and run:\n\n`npm test` or `yarn test`\n\n(This assumes a testing framework like Jest is configured in your `package.json`.)",
+  "dependencies": [
+    "react",
+    "react-dom",
+    "marked"
+  ],
+  "requirement_coverage": {
+    "REQ-001": [
+      "src/App.js",
+      "src/components/SplitPane.js",
+      "src/components/SplitPane.css",
+      "src/components/Editor.js",
+      "src/components/Preview.js"
+    ],
+    "REQ-002": [
+      "src/App.js",
+      "src/components/SplitPane.js",
+      "src/components/SplitPane.css"
+    ],
+    "REQ-003": [
+      "src/App.js",
+      "src/components/Toolbar.css",
+      "src/components/Editor.css",
+      "src/components/Preview.css",
+      "src/components/StatusBar.css",
+      "src/styles/styles.css"
+    ],
+    "REQ-004": [
+      "src/App.js",
+      "src/utils/markdownParser.js",
+      "src/components/Preview.js"
+    ],
+    "REQ-005": [
+      "src/App.js",
+      "src/components/Toolbar.js",
+      "src/components/Toolbar.css",
+      "src/components/Editor.js"
+    ],
+    "REQ-006": [
+      "src/App.js",
+      "src/components/StatusBar.js",
+      "src/components/StatusBar.css",
+      "src/utils/countUtils.js",
+      "src/tests/countUtils.test.js"
+    ],
+    "REQ-007": [
+      "src/App.js",
+      "src/components/Preview.js",
+      "src/components/Preview.css"
+    ],
+    "REQ-008": [
+      "src/utils/markdownParser.js",
+      "src/tests/markdownParser.test.js",
+      "src/utils/countUtils.js",
+      "src/tests/countUtils.test.js"
+    ]
+  }
+}

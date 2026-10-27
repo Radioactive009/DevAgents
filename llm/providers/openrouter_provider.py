@@ -78,8 +78,8 @@ class OpenRouterProvider(LLMProvider):
         if "reasoning" not in payload and ("nemotron" in self.model.lower() or "reasoning" in self.model.lower()):
             payload["reasoning"] = {"max_tokens": 0}
         
-        max_retries = 5
-        base_delay = 2.0
+        max_retries = 8
+        base_delay = 3.0
         
         for attempt in range(max_retries):
             req = urllib.request.Request(

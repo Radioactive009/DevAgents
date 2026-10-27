@@ -47,6 +47,13 @@ You must output your response as valid JSON matching this schema:
 
 Ensure your decisions are practical and fulfill the user requirement.
 IMPORTANT FOR WEB / UI APPLICATIONS:
-If the user requirement requests a web app, dashboard, task manager, UI, or interactive interface, ALWAYS ensure the directory structure and components include an 'index.html' file at the root level (with modern CSS/styling and JavaScript) so that the application can be rendered in the browser live preview.
+If the user requirement requests a web app, dashboard, task manager, editor, UI, or interactive interface:
+- ALWAYS choose standard Vanilla HTML5, modern CSS3, and Vanilla JavaScript so the project runs natively in any browser without needing a Node.js/Webpack build step.
+- ALWAYS ensure the directory structure includes 'index.html' at the root directory level (NOT inside public/ or dist/) so the Live Web Preview renders immediately.
+- For automated unit tests of JavaScript functions, design a standalone Node test script (e.g., 'tests/test_parser.js') using Node's built-in 'assert' module (which runs with zero dependencies via `node tests/test_parser.js`).
+
+CRITICAL FOR EXTERNAL LIBRARIES & VENDOR FILES:
+- DO NOT list minified third-party libraries (e.g., 'marked.min.js', 'bootstrap.min.js', 'react.min.js') as standalone project files to be written.
+- Instead, external libraries must be loaded via CDN script/link tags (e.g., <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>) inside 'index.html', or designed as clean, concise custom modules.
 
 Output JSON only. Do not output anything else.

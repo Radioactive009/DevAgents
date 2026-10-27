@@ -1,0 +1,41 @@
+1. Interactive Web Applications (With Live Web Preview)
+Any frontend or full-stack web project that includes an HTML/JS entrypoint automatically spins up inside the sandboxed Live Web Preview tab:
+
+Project Type	Example Features	What Gets Generated
+Productivity & Task Management	Kanban board, todo list with filtering, tag management, local storage persistence	index.html, CSS design system, modular JS/React components, Jest test suite
+Interactive Dashboards	Crypto tracker, analytics widgets, interactive data charts, theme switchers	HTML layout, responsive CSS grid/flexbox, state management store
+Utility & Tools	Markdown live previewer, JSON formatter/validator, regex tester, unit converter	Input handlers, validation logic, real-time rendering engine, unit tests
+Interactive Educational Games	Typing speed tester, flashcard quiz app, memory match game, chess puzzle board	Game loop logic, scoring algorithms, interactive animations, sound/UI states
+Ready-to-Test Prompt (Copy & Paste):
+text
+Task Description:
+Build a modern Markdown Live Preview editor with a split-screen view. The left pane should have an input textarea with syntax formatting buttons (bold, italic, code block), and the right pane should render the parsed HTML in real time with styled typography. Include a word counter and character counter at the bottom.
+Requirements:
+- Split-screen responsive layout with dark theme
+- Real-time markdown parsing to HTML
+- Toolbar for bold, italic, headings, and code blocks
+- Live word and character count status bar
+- Automated unit tests validating the markdown parsing functions
+2. Python Packages, CLI Tools & Algorithms (With Automated Pytest Suites)
+DevAgents includes built-in sandboxed Python execution that runs pytest, captures failure traces, and triggers the autonomous debugging agent to self-heal broken tests:
+
+Project Type	Example Features	What Gets Generated
+Data Structures & Algorithms	Trie autocomplete, graph pathfinder (Dijkstra/A*), LRU cache, binary search tree	Pure Python module, docstrings, edge-case unit test suites (pytest)
+Data Validation & Parsing	Custom schema validator, CSV/JSON parser, formula evaluator	Type-annotated classes, custom exception hierarchies, extensive test coverage
+Financial & Math Engines	Loan amortizer, compound interest calculator, statistical analysis toolkit	Modular functions, numerical precision checks, parametrized tests
+Ready-to-Test Prompt (Copy & Paste):
+text
+Task Description:
+Build a thread-safe in-memory key-value cache library in Python that supports Time-To-Live (TTL) expiration per key, Least Recently Used (LRU) eviction when reaching max capacity, and a bulk get/set API.
+Requirements:
+- Cache class with configurable max_size and default_ttl
+- O(1) get and set operations using a doubly linked list and hash map
+- Automatic eviction of expired keys on access
+- Thread-safe access using locks
+- Comprehensive pytest test suite testing TTL expiration, LRU eviction order, and concurrency
+3. Quick Demonstration Presets
+On the Web Dashboard (http://localhost:5173), you can also click the Quick Presets buttons at the top right of the run creator:
+
+Python Calc: Demonstrates the multi-agent pipeline with autonomous self-healing (injects a bug, runs pytest, debugs the failure, and re-verifies).
+Web Dashboard: Spawns a multi-file responsive web interface that opens in the Live Preview iframe.
+String Utils: Generates string sanitization and transformation utilities with full test coverage.

@@ -129,6 +129,26 @@ class ArchitectureSpecification:
             architecture_decisions=[ArchitectureDecision.from_dict(d) for d in data.get("architecture_decisions", [])]
         )
 
+def repair_json_escapes(s: str) -> str:
+    # Fix invalid escape sequences (e.g. \d, \s, \w, \(, etc.)
+    # In JSON, valid escapes are \", \\, \/, \b, \f, \n, \r, \t, and \uXXXX
+    s = re.sub(r'\\(?![/\\bfnrt"]|u[0-9a-fA-F]{4})', r'\\\\', s)
+    # Fix trailing commas before } or ]
+    s = re.sub(r',\s*([}\]])', r'\1', s)
+    return s
+
+def _try_load_json(raw: str) -> Optional[dict]:
+    try:
+        return json.loads(raw, strict=False)
+    except (json.JSONDecodeError, ValueError):
+        pass
+    try:
+        repaired = repair_json_escapes(raw)
+        return json.loads(repaired, strict=False)
+    except (json.JSONDecodeError, ValueError):
+        pass
+    return None
+
 def parse_json_response(text: str) -> dict:
     if not text:
         raise ValueError("Empty response text")
@@ -136,23 +156,25 @@ def parse_json_response(text: str) -> dict:
     # 1. Attempt to extract JSON from code blocks
     match = re.search(r'```(?:json)?\s*(\{.*?\})\s*```', text, re.DOTALL)
     if match:
-        try:
-            return json.loads(match.group(1))
-        except json.JSONDecodeError:
-            pass
+        res = _try_load_json(match.group(1))
+        if res is not None:
+            return res
             
     # 2. Extract outermost JSON object { ... }
     first_brace = text.find('{')
     last_brace = text.rfind('}')
     if first_brace != -1 and last_brace > first_brace:
         candidate = text[first_brace:last_brace + 1]
-        try:
-            return json.loads(candidate)
-        except json.JSONDecodeError:
-            pass
+        res = _try_load_json(candidate)
+        if res is not None:
+            return res
 
-    # 3. Try parsing the whole thing
-    return json.loads(text)
+    # 3. Try parsing the whole thing with repair
+    res = _try_load_json(text)
+    if res is not None:
+        return res
+
+    return json.loads(text, strict=False)
 
 @dataclass
 class GeneratedFile:

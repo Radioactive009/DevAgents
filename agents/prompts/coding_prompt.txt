@@ -26,7 +26,7 @@ Output your response as valid JSON matching this schema:
     ],
     "entrypoint": "string",
     "run_command": "string",
-    "test_command": "string",
+    "test_command": "string (MUST be an exact executable shell command, e.g. 'node tests/test_parser.js' or 'pytest', NEVER English sentences)",
     "dependencies": ["string"],
     "requirement_coverage": {
         "REQ-001": ["path/to/file1", "path/to/file2"]
@@ -35,4 +35,12 @@ Output your response as valid JSON matching this schema:
 
 Do not include markdown explanations outside the JSON object. Do not expose secrets or API keys.
 IMPORTANT FOR WEB / UI APPLICATIONS:
-If the project requirement involves a web interface, task manager, dashboard, or UI, ALWAYS generate a complete, working 'index.html' file at the root level containing HTML structure, modern CSS styles (e.g. Tailwind CDN or embedded CSS), and full JavaScript logic so it can be previewed immediately in the Live Web Preview.
+If the project requirement involves a web interface, task manager, dashboard, editor, or UI:
+- ALWAYS generate a complete, working 'index.html' file at the root level containing HTML structure, modern CSS styles, and full interactive JavaScript logic so it can be previewed immediately in the Live Web Preview.
+- Do NOT use unbundled JSX or bare ES module imports in browser scripts. Use Vanilla JavaScript DOM methods and standard event listeners.
+- For automated unit tests of JavaScript functions, write a standalone test file (e.g. 'tests/test_parser.js') using Node.js built-in 'assert' module (`const assert = require('node:assert');`) and set 'test_command' to 'node tests/test_parser.js' so it executes cleanly with zero external npm dependencies!
+
+CRITICAL FOR THIRD-PARTY LIBRARIES & TOKEN LIMITS:
+- NEVER attempt to generate, inline, or bundle massive minified third-party vendor libraries (e.g., marked.min.js, react.min.js, lodash.min.js, bootstrap.min.js).
+- When third-party libraries (such as Markdown parsers, icons, or charts) are needed, load them via reliable CDN script tags in 'index.html' (for example: <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>) OR implement a clean, lightweight custom parser/module in concise standard JavaScript.
+- Inlining massive minified code causes token exhaustion, truncates JSON output, and breaks the build!

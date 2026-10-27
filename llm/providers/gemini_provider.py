@@ -7,10 +7,9 @@ from ..errors import LLMAuthenticationError, LLMAPIError
 
 class GeminiProvider(LLMProvider):
     def __init__(self, model: Optional[str] = None):
-        self.model = model or os.environ.get("GEMINI_MODEL", "gemini-2.5-flash")
-        # Fallback if somehow mock-model gets passed in explicitly
-        if self.model == "mock-model":
-            self.model = os.environ.get("GEMINI_MODEL", "gemini-2.5-flash")
+        self.model = model or os.environ.get("GEMINI_MODEL", "gemini-2.5-flash-lite")
+        if self.model in ["mock-model", "gemini-2.5-flash", "default"]:
+            self.model = os.environ.get("GEMINI_MODEL", "gemini-2.5-flash-lite")
             
         api_key = os.environ.get("GEMINI_API_KEY")
         if not api_key:
@@ -31,7 +30,7 @@ class GeminiProvider(LLMProvider):
         prompt: str,
         system_prompt: Optional[str] = None,
         temperature: float = 0.7,
-        max_tokens: int = 1000,
+        max_tokens: int = 8192,
         **kwargs: Any
     ) -> LLMResponse:
         start_time = time.time()
@@ -43,15 +42,37 @@ class GeminiProvider(LLMProvider):
             **kwargs
         )
         
-        try:
-            response = self.client.models.generate_content(
-                model=self.model,
-                contents=prompt,
-                config=config,
-            )
-        except Exception as e:
-            # Simple error handling for now as we don't have specifics
-            raise LLMAPIError(str(e))
+        candidate_models = [self.model]
+        for fallback in ["gemini-3.5-flash-lite", "gemini-2.5-flash-lite", "gemini-3.5-flash"]:
+            if fallback not in candidate_models:
+                candidate_models.append(fallback)
+
+        response = None
+        last_error = None
+
+        for attempt_model in candidate_models:
+            for retry in range(3):
+                try:
+                    response = self.client.models.generate_content(
+                        model=attempt_model,
+                        contents=prompt,
+                        config=config,
+                    )
+                    self.model = attempt_model
+                    break
+                except Exception as e:
+                    last_error = e
+                    err_msg = str(e).lower()
+                    if "503" in err_msg or "unavailable" in err_msg or "429" in err_msg or "quota" in err_msg:
+                        time.sleep(1.5 * (retry + 1))
+                        continue
+                    else:
+                        break
+            if response is not None:
+                break
+
+        if response is None:
+            raise LLMAPIError(str(last_error))
             
         latency = time.time() - start_time
         

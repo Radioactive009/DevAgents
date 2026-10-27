@@ -21,8 +21,8 @@ def create_llm_provider(config: Dict[str, Any]) -> LLMProvider:
         return OpenRouterProvider(model=model_name)
     elif provider_name in ["gemini", "google"]:
         from .providers.gemini_provider import GeminiProvider
-        if not model_name or model_name in ["mock-model", "default"]:
-            model_name = os.environ.get("GEMINI_MODEL", "gemini-2.5-flash")
+        if not model_name or model_name in ["mock-model", "default", "gemini-2.5-flash"]:
+            model_name = os.environ.get("GEMINI_MODEL", "gemini-2.5-flash-lite")
         return GeminiProvider(model=model_name)
     elif provider_name in ["huggingface", "hf"]:
         from .providers.huggingface_provider import HuggingFaceProvider
