@@ -86,28 +86,6 @@ class VerificationAgent(Agent):
             response_text = response.text
             token_usage = response.total_tokens
             parsed = parse_json_response(response_text)
-        except Exception as e:
-            # Deterministic fallback when LLM is unavailable, rate-limited, or context limit exceeded
-            status = "FAILED" if failed_checks else "VERIFIED"
-            duration = time.time() - start_time
-            result = VerificationResult(
-                status=status,
-                summary=f"Deterministic verification result: {'; '.join(failed_checks) if failed_checks else 'All checks passed'}. (LLM analysis note: {str(e)})",
-                requirement_coverage=0.0 if failed_checks else 1.0,
-                test_pass_rate=1.0 if (state.test_result and state.test_result.status == 'PASSED') else 0.0,
-                verification_duration=duration,
-                agent_name="VerificationAgent",
-                provider=getattr(self.provider, "name", "unknown"),
-                model=getattr(self.provider, "model", "unknown"),
-                token_usage=0,
-                timestamp=datetime.now(timezone.utc).isoformat(),
-                failed_checks=failed_checks,
-                warnings=[f"Deterministic fallback triggered: {str(e)}"],
-                recommendations=["Fix failing unit tests or address syntax/infrastructure errors"] if failed_checks else [],
-                criteria=[]
-            )
-            state.verification_result = result
-            return self._create_result(success=True, run_id=state.run_id, output=result, raw_response_available=False)
             
             # Post-process with deterministic metrics
             total_reqs = len(state.project_plan.requirements) if state.project_plan else 0
@@ -174,7 +152,7 @@ class VerificationAgent(Agent):
                 agent_name="VerificationAgent",
                 provider=getattr(self.provider, "name", "unknown"),
                 model=getattr(self.provider, "model", "unknown"),
-                token_usage=token_usage,
+                token_usage=token_usage if 'token_usage' in locals() else 0,
                 timestamp=datetime.now(timezone.utc).isoformat()
             )
             state.verification_result = result
@@ -182,11 +160,13 @@ class VerificationAgent(Agent):
                 success=False,
                 run_id=state.run_id,
                 output=result,
-                raw_response_available=True,
+                raw_response_available=True if 'response' in locals() else False,
                 provider_name=getattr(self.provider, "name", "unknown"),
                 model_name=getattr(self.provider, "model", "unknown"),
-                latency=getattr(response, "latency_seconds", None),
-                token_usage=token_usage,
+                latency=getattr(response, "latency_seconds", None) if 'response' in locals() else None,
+                token_usage=token_usage if 'token_usage' in locals() else 0,
                 error_category="VERIFICATION_ERROR",
+                error_message=str(e)
+            )
                 error_message=f"Verification parsing failed: {str(e)}"
             )
