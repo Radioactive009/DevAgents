@@ -168,5 +168,3 @@ class VerificationAgent(Agent):
                 error_category="VERIFICATION_ERROR",
                 error_message=str(e)
             )
-                error_message=f"Verification parsing failed: {str(e)}"
-            )

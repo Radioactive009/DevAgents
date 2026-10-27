@@ -1,4 +1,4 @@
-from fastapi import FastAPI, BackgroundTasks, HTTPException
+from fastapi import FastAPI, BackgroundTasks, HTTPException, Response
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 from typing import List, Dict, Any, Optional
@@ -6,6 +6,7 @@ import os
 import json
 import uuid
 import asyncio
+import mimetypes
 from datetime import datetime
 import threading
 
@@ -36,6 +37,7 @@ class RunRequest(BaseModel):
     provider: str = "groq"
     model: Optional[str] = None
     system: str = "MULTI_AGENT"
+    human_approval: bool = False
 
 # Global memory to store current runs
 active_runs = {}
@@ -56,6 +58,9 @@ def execute_run(run_id: str, request: RunRequest):
             if run_id not in active_runs_state:
                 active_runs_state[run_id] = ProjectState(run_id=run_id, user_requirement=req_text)
             state = active_runs_state[run_id]
+            state.metadata["human_approval"] = request.human_approval
+            state.metadata["approval_event"] = threading.Event()
+            state.metadata["approval_status"] = "PENDING_APPROVAL" if request.human_approval else "NOT_REQUIRED"
         finally:
             state_lock.release()
             
@@ -195,17 +200,139 @@ async def get_run_project(run_id: str):
     finally:
         state_lock.release()
 
+class ApprovalRequest(BaseModel):
+    decision: str  # "APPROVE" or "REJECT"
+    feedback: Optional[str] = None
+
+@app.post("/api/runs/{run_id}/approve")
+async def approve_run(run_id: str, request: ApprovalRequest):
+    state_lock.acquire()
+    try:
+        state = active_runs_state.get(run_id)
+        if not state:
+            raise HTTPException(status_code=404, detail="Run not found")
+        
+        event = state.metadata.get("approval_event")
+        if not event:
+            raise HTTPException(status_code=400, detail="Run does not have a pending approval checkpoint")
+            
+        decision = request.decision.upper()
+        if decision not in ["APPROVE", "REJECT"]:
+            raise HTTPException(status_code=400, detail="Decision must be APPROVE or REJECT")
+            
+        state.metadata["approval_status"] = "APPROVED" if decision == "APPROVE" else "REJECTED"
+        if request.feedback:
+            state.metadata["approval_feedback"] = request.feedback
+            
+        event.set()
+        return {"status": "SUCCESS", "decision": state.metadata["approval_status"]}
+    finally:
+        state_lock.release()
+
 @app.get("/api/runs/{run_id}/state")
 async def get_run_state(run_id: str):
+    import dataclasses
     state_lock.acquire()
     try:
         state = active_runs_state.get(run_id)
         if not state:
             return {"error": "Not found"}
+        
+        # Safely serialize metadata excluding thread locks/events
+        safe_meta = {}
+        for k, v in state.metadata.items():
+            if isinstance(v, (str, int, float, bool, list, dict)) or v is None:
+                safe_meta[k] = v
+            else:
+                safe_meta[k] = str(v)
+                
         return {
-            "metadata": state.metadata,
-            "user_requirement": state.user_requirement
+            "run_id": run_id,
+            "metadata": safe_meta,
+            "user_requirement": state.user_requirement,
+            "approval_status": state.metadata.get("approval_status", "NOT_REQUIRED"),
+            "approval_feedback": state.metadata.get("approval_feedback"),
+            "architecture": dataclasses.asdict(state.architecture) if getattr(state, "architecture", None) else None,
+            "project_plan": dataclasses.asdict(state.project_plan) if getattr(state, "project_plan", None) else None
         }
+    finally:
+        state_lock.release()
+
+@app.get("/api/runs/{run_id}/preview-status")
+async def get_preview_status(run_id: str):
+    state_lock.acquire()
+    try:
+        state = active_runs_state.get(run_id)
+        if not state or not state.generated_project:
+            return {"has_preview": False, "status": "NO_PROJECT"}
+        
+        file_map = {f.path.replace("\\", "/"): f.content for f in state.generated_project.files}
+        html_files = [p for p in file_map if p.endswith(".html")]
+        if not html_files:
+            return {"has_preview": False, "status": "NO_HTML_ENTRYPOINT"}
+            
+        entrypoint = "index.html" if "index.html" in file_map else html_files[0]
+        return {
+            "has_preview": True,
+            "entrypoint": entrypoint,
+            "url": f"/api/runs/{run_id}/preview/{entrypoint}",
+            "status": "READY",
+            "files_count": len(file_map)
+        }
+    finally:
+        state_lock.release()
+
+@app.get("/api/runs/{run_id}/preview/{file_path:path}")
+async def get_preview_file(run_id: str, file_path: str):
+    state_lock.acquire()
+    try:
+        state = active_runs_state.get(run_id)
+        if not state or not state.generated_project:
+            raise HTTPException(status_code=404, detail="Run project not found")
+        
+        file_map = {f.path.replace("\\", "/"): f.content for f in state.generated_project.files}
+        clean_path = file_path.strip("/").replace("\\", "/")
+        
+        # If empty or root, look for standard HTML entrypoints
+        if not clean_path:
+            candidates = ["index.html", "src/index.html", "public/index.html"]
+            for c in candidates:
+                if c in file_map:
+                    clean_path = c
+                    break
+            if not clean_path:
+                html_files = [p for p in file_map if p.endswith(".html")]
+                if html_files:
+                    clean_path = html_files[0]
+                else:
+                    raise HTTPException(status_code=404, detail="No HTML entrypoint found in project")
+
+        # Exact match or relative fallback
+        matched_content = file_map.get(clean_path)
+        if matched_content is None:
+            # Fallback by suffix or basename
+            for p, content in file_map.items():
+                if p.endswith("/" + clean_path) or os.path.basename(p) == os.path.basename(clean_path):
+                    matched_content = content
+                    break
+                    
+        if matched_content is None:
+            raise HTTPException(status_code=404, detail=f"File {file_path} not found in project")
+            
+        content_type, _ = mimetypes.guess_type(clean_path)
+        if not content_type:
+            if clean_path.endswith((".js", ".jsx", ".ts", ".tsx")):
+                content_type = "application/javascript"
+            elif clean_path.endswith(".css"):
+                content_type = "text/css"
+            elif clean_path.endswith(".html"):
+                content_type = "text/html"
+            elif clean_path.endswith(".json"):
+                content_type = "application/json"
+            else:
+                content_type = "text/plain"
+                
+        return Response(content=matched_content, media_type=content_type)
     finally:
         state_lock.release()
 

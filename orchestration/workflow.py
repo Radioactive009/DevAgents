@@ -320,6 +320,46 @@ def run_phase11_workflow(
             telemetry.end_run(run_id, False, "ARCHITECTURE_FAILED")
             return state
 
+        # Phase 5: Optional Human Approval Checkpoint
+        if state.metadata.get("human_approval"):
+            state.metadata["approval_status"] = "PENDING_APPROVAL"
+            telemetry.record_agent(AgentEvent(
+                run_id=run_id,
+                agent_name="HumanApproval",
+                phase="approval",
+                duration_ms=0,
+                success=True,
+                action="Awaiting human approval of architecture plan..."
+            ))
+            approval_event = state.metadata.get("approval_event")
+            if approval_event:
+                # Wait for approval signal (default up to 600 seconds)
+                timeout_s = state.metadata.get("approval_timeout", 600)
+                event_signaled = approval_event.wait(timeout=timeout_s)
+                status = state.metadata.get("approval_status", "PENDING_APPROVAL")
+                if not event_signaled or status == "REJECTED":
+                    state.metadata["approval_status"] = "REJECTED"
+                    telemetry.record_agent(AgentEvent(
+                        run_id=run_id,
+                        agent_name="HumanApproval",
+                        phase="approval",
+                        duration_ms=0,
+                        success=False,
+                        action=f"Architecture rejected or approval timed out. Feedback: {state.metadata.get('approval_feedback', 'None')}"
+                    ))
+                    telemetry.end_run(run_id, False, "HUMAN_APPROVAL_REJECTED")
+                    return state
+                
+                state.metadata["approval_status"] = "APPROVED"
+                telemetry.record_agent(AgentEvent(
+                    run_id=run_id,
+                    agent_name="HumanApproval",
+                    phase="approval",
+                    duration_ms=0,
+                    success=True,
+                    action="Human approval granted. Proceeding to code generation."
+                ))
+
         # Coding
         from agents.coding import CodingAgent
         start_t = time.time()

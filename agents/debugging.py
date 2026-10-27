@@ -176,11 +176,29 @@ class DebuggingAgent(Agent):
         if state.architecture:
             arch_json = json.dumps(dataclasses.asdict(state.architecture), indent=2)
             
-        files_json = json.dumps([{ "path": f.path, "content": f.content } for f in state.generated_project.files], indent=2)
+        # Phase 4: Context Optimization for Larger Projects
+        from rag.context_optimizer import ContextOptimizer
+        optimizer = ContextOptimizer()
+        failure_output = ""
+        if state.test_result:
+            failure_output = (state.test_result.stdout or "") + "\n" + (state.test_result.stderr or "")
+            
+        relevant_files = optimizer.extract_relevant_files(failure_output, state.generated_project.files)
+        previous_files_map = state.metadata.get("previous_files_map")
+        
+        context_files, opt_metrics = optimizer.optimize_project_files_context(
+            state.generated_project.files,
+            relevant_files,
+            previous_files_map=previous_files_map
+        )
+        state.metadata["context_optimization"] = opt_metrics
+        state.metadata["previous_files_map"] = {f.path: f.content for f in state.generated_project.files}
+
+        files_json = json.dumps(context_files, indent=2)
         test_json = json.dumps(dataclasses.asdict(state.test_result), indent=2)
         history_json = json.dumps(state.debugging_history, indent=2)
         
-        task_info = f"Requirements:\\n{req_json}\\n\\nArchitecture:\\n{arch_json}\\n\\nCurrent Project Files:\\n{files_json}"
+        task_info = f"Requirements:\\n{req_json}\\n\\nArchitecture:\\n{arch_json}\\n\\nCurrent Project Files (Context-Optimized: {opt_metrics.get('reduction_percent', 0)}% size reduction):\\n{files_json}"
         
         retriever = state.metadata.get('retriever')
         memory = state.metadata.get('memory')

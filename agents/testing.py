@@ -62,13 +62,49 @@ class TestingAgent(Agent):
             deps_installed = False
             is_local = isinstance(sandbox, LocalProcessSandbox)
             deps_target = os.path.join(sandbox.workspace_dir, ".deps") if is_local else "/app/.deps"
+            file_paths = [f.path for f in project.files]
+            has_package_json = "package.json" in file_paths
+            has_python_deps = "requirements.txt" in file_paths or (bool(project.dependencies) and not has_package_json)
 
-            if (project.dependencies or "requirements.txt" in [f.path for f in project.files]) and (allow_network or not is_local):
+            # 2a. Node.js dependencies
+            if has_package_json and (allow_network or not is_local):
+                original_network = sandbox.network_enabled
+                sandbox.network_enabled = allow_network
+                npm_cmd = ["npm", "install"]
+                dep_res = sandbox.run_command(npm_cmd)
+                sandbox.network_enabled = original_network
+                if not dep_res.success:
+                    test_result = TestResult(
+                        success=False,
+                        status="DEPENDENCY_INSTALLATION_FAILED",
+                        command=dep_res.command,
+                        exit_code=dep_res.exit_code,
+                        stdout=self._sanitize(dep_res.stdout),
+                        stderr=self._sanitize(dep_res.stderr),
+                        duration=dep_res.duration,
+                        timed_out=dep_res.timed_out,
+                        failure_category="DEPENDENCY_INSTALLATION_FAILED",
+                        sandbox_id=sandbox.sandbox_id,
+                        project_name=project.project_name
+                    )
+                    state.test_result = test_result
+                    return self._create_result(
+                        success=False,
+                        run_id=state.run_id,
+                        output=test_result,
+                        raw_response_available=False,
+                        error_category="DEPENDENCY_INSTALLATION_FAILED",
+                        error_message="Failed to install npm dependencies"
+                    )
+                deps_installed = True
+
+            # 2b. Python dependencies
+            elif has_python_deps and (allow_network or not is_local):
                 original_network = sandbox.network_enabled
                 sandbox.network_enabled = allow_network
                 
                 req_cmd = ["python", "-m", "pip", "install", "--target", deps_target]
-                if "requirements.txt" in [f.path for f in project.files]:
+                if "requirements.txt" in file_paths:
                     req_cmd.extend(["-r", "requirements.txt"])
                 else:
                     req_cmd.extend(project.dependencies)
@@ -104,7 +140,7 @@ class TestingAgent(Agent):
             # 3. Run tests
             test_cmd_raw = project.test_command
             test_cmd = shlex.split(test_cmd_raw)
-            if deps_installed:
+            if deps_installed and not has_package_json:
                 sandbox.network_enabled = False # disable network during test execution for isolation
                 test_cmd = ["env", f"PYTHONPATH={deps_target}"] + test_cmd
                     
@@ -119,9 +155,33 @@ class TestingAgent(Agent):
                 
             stdout = self._sanitize(run_res.stdout)
             stderr = self._sanitize(run_res.stderr)
+            full_out = stdout + "\n" + stderr
             
-            parsed_metrics = self._parse_pytest_output(stdout)
+            parsed_metrics = self._parse_pytest_output(full_out)
+            if not parsed_metrics:
+                parsed_metrics = self._parse_jest_output(full_out)
             
+            # Identify test framework
+            cmd_lower = " ".join(test_cmd).lower()
+            if "jest" in cmd_lower:
+                detected_framework = "jest"
+            elif "vitest" in cmd_lower:
+                detected_framework = "vitest"
+            elif "npm" in cmd_lower:
+                detected_framework = "npm-test"
+            elif "pytest" in cmd_lower:
+                detected_framework = "pytest"
+            else:
+                detected_framework = "custom"
+
+            # Classify failure using Phase 10 taxonomy engine if test failed
+            failure_cat = run_res.failure_category
+            if not run_res.success:
+                from evaluation.failure_classifier import classify_failure
+                classified = classify_failure(full_out, run_res.exit_code)
+                failure_cat = classified["category"]
+                state.metadata["failure_classification"] = classified
+
             test_result = TestResult(
                 success=run_res.success,
                 status=status,
@@ -136,9 +196,9 @@ class TestingAgent(Agent):
                 tests_failed=parsed_metrics.get("failed"),
                 tests_skipped=parsed_metrics.get("skipped"),
                 tests_errors=parsed_metrics.get("errors"),
-                failure_category=run_res.failure_category,
+                failure_category=failure_cat,
                 sandbox_id=sandbox.sandbox_id,
-                test_framework="pytest" if "pytest" in test_cmd else "unknown",
+                test_framework=detected_framework,
                 project_name=project.project_name,
                 requirement_results=project.requirement_coverage
             )
@@ -205,16 +265,16 @@ class TestingAgent(Agent):
                 sandbox.cleanup()
 
     def _sanitize(self, text: str) -> str:
-        """Sanitize secrets from logs."""
+        """Sanitize secrets and API keys from logs and output."""
+        if not text:
+            return text
         keys_to_hide = []
-        if os.environ.get("GROQ_API_KEY"):
-            keys_to_hide.append(os.environ["GROQ_API_KEY"])
-        if os.environ.get("OPENROUTER_API_KEY"):
-            keys_to_hide.append(os.environ["OPENROUTER_API_KEY"])
+        for env_var, val in os.environ.items():
+            if ("KEY" in env_var.upper() or "TOKEN" in env_var.upper() or "SECRET" in env_var.upper()) and val and len(val) >= 6:
+                keys_to_hide.append(val)
             
         for key in keys_to_hide:
-            if key and len(key) > 5:
-                text = text.replace(key, "***REDACTED***")
+            text = text.replace(key, "***REDACTED***")
         return text
         
     def _parse_pytest_output(self, stdout: str) -> Dict[str, int]:
@@ -239,4 +299,48 @@ class TestingAgent(Agent):
             if total > 0:
                 metrics['total'] = total
         
+        return metrics
+
+    def _parse_jest_output(self, text: str) -> Dict[str, int]:
+        """Parse Jest / Vitest / Node test output."""
+        metrics = {}
+        # Jest: Tests:       1 failed, 4 passed, 5 total
+        match = re.search(r'Tests:\s+(.*)', text)
+        if match:
+            line = match.group(1)
+            for part in line.split(','):
+                part = part.strip()
+                if 'passed' in part:
+                    m = re.search(r'(\d+)\s+passed', part)
+                    if m: metrics['passed'] = int(m.group(1))
+                elif 'failed' in part:
+                    m = re.search(r'(\d+)\s+failed', part)
+                    if m: metrics['failed'] = int(m.group(1))
+                elif 'skipped' in part or 'pending' in part:
+                    m = re.search(r'(\d+)\s+(?:skipped|pending)', part)
+                    if m: metrics['skipped'] = int(m.group(1))
+                elif 'total' in part:
+                    m = re.search(r'(\d+)\s+total', part)
+                    if m: metrics['total'] = int(m.group(1))
+            if 'total' not in metrics and (metrics.get('passed') or metrics.get('failed')):
+                metrics['total'] = (metrics.get('passed', 0) + metrics.get('failed', 0) + metrics.get('skipped', 0))
+
+        # Vitest: Tests  1 failed | 4 passed (5)
+        if not metrics:
+            match = re.search(r'Tests\s+(.*?)(?:\n|$)', text)
+            if match:
+                line = match.group(1)
+                for part in line.split('|'):
+                    part = part.strip()
+                    if 'passed' in part:
+                        m = re.search(r'(\d+)\s+passed', part)
+                        if m: metrics['passed'] = int(m.group(1))
+                    elif 'failed' in part:
+                        m = re.search(r'(\d+)\s+failed', part)
+                        if m: metrics['failed'] = int(m.group(1))
+                m_tot = re.search(r'\((\d+)\)', line)
+                if m_tot:
+                    metrics['total'] = int(m_tot.group(1))
+                elif 'passed' in metrics or 'failed' in metrics:
+                    metrics['total'] = metrics.get('passed', 0) + metrics.get('failed', 0)
         return metrics

@@ -54,5 +54,11 @@ class ContextBuilder:
         return full_context
         
     def _sanitize(self, text: str) -> str:
-        # A simple sanitization placeholder. In reality this would strip out keys if any sneaked in
+        """Sanitize secrets and API keys from prompt context."""
+        if not text:
+            return text
+        import os
+        for env_var, val in os.environ.items():
+            if ("KEY" in env_var.upper() or "TOKEN" in env_var.upper() or "SECRET" in env_var.upper()) and val and len(val) >= 6:
+                text = text.replace(val, "***REDACTED***")
         return text

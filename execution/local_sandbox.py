@@ -61,6 +61,10 @@ class LocalProcessSandbox(Sandbox):
             cmd[0] = sys.executable
         elif cmd and cmd[0] == "pytest":
             cmd = [sys.executable, "-m", "pytest"] + cmd[1:]
+        elif cmd and not os.path.isabs(cmd[0]):
+            resolved = shutil.which(cmd[0])
+            if resolved:
+                cmd[0] = resolved
 
         try:
             res = subprocess.run(

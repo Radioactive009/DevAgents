@@ -29,3 +29,26 @@ def test_get_project_empty():
     response = client.get("/api/runs/non-existent/project")
     assert response.status_code == 200
     assert response.json() == {"files": {}}
+
+def test_approval_checkpoint_flow():
+    import threading
+    from orchestration.state import ProjectState
+    test_id = "test-approval-run"
+    state = ProjectState(run_id=test_id, user_requirement="test")
+    state.metadata["human_approval"] = True
+    event = threading.Event()
+    state.metadata["approval_event"] = event
+    state.metadata["approval_status"] = "PENDING_APPROVAL"
+    active_runs_state[test_id] = state
+
+    # Test state retrieval
+    res = client.get(f"/api/runs/{test_id}/state")
+    assert res.status_code == 200
+    assert res.json()["approval_status"] == "PENDING_APPROVAL"
+
+    # Test approval submission
+    app_res = client.post(f"/api/runs/{test_id}/approve", json={"decision": "APPROVE", "feedback": "Approved"})
+    assert app_res.status_code == 200
+    assert app_res.json()["decision"] == "APPROVED"
+    assert event.is_set()
+

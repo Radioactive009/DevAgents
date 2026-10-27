@@ -191,5 +191,50 @@ class TestTestingAgent(unittest.TestCase):
         self.assertNotIn("supersecretkey", result.output.stdout)
         self.assertIn("***REDACTED***", result.output.stdout)
 
+    def test_parse_jest_output(self):
+        output = "PASS test/app.test.js\nTests: 2 failed, 8 passed, 10 total\nTime: 1.25s"
+        parsed = self.agent._parse_jest_output(output)
+        self.assertEqual(parsed.get("passed"), 8)
+        self.assertEqual(parsed.get("failed"), 2)
+        self.assertEqual(parsed.get("total"), 10)
+
+    def test_parse_vitest_output(self):
+        output = "Tests  1 failed | 4 passed (5)\nDuration 500ms"
+        parsed = self.agent._parse_jest_output(output)
+        self.assertEqual(parsed.get("passed"), 4)
+        self.assertEqual(parsed.get("failed"), 1)
+        self.assertEqual(parsed.get("total"), 5)
+
+    @patch("agents.testing.DockerSandbox")
+    def test_nodejs_project_flow(self, mock_docker_sandbox):
+        mock_sandbox = MockSandbox()
+        mock_sandbox.run_command_mock.return_value = ExecutionResult(
+            success=True, exit_code=0, stdout="added 25 packages", stderr="", command="npm install", duration=2.0
+        )
+        mock_sandbox.run_tests_mock.return_value = ExecutionResult(
+            success=True, exit_code=0, stdout="Tests: 5 passed, 5 total", stderr="", command="npm test", duration=1.0
+        )
+        mock_docker_sandbox.return_value = mock_sandbox
+
+        node_proj = GeneratedProject(
+            project_name="node_app",
+            files=[
+                GeneratedFile(path="package.json", content='{"name": "test"}', requirement_ids=[]),
+                GeneratedFile(path="index.js", content="console.log(1)", requirement_ids=["R1"])
+            ],
+            entrypoint="index.js",
+            run_command="node index.js",
+            test_command="npm test",
+            dependencies=["react"],
+            requirement_coverage={"R1": ["index.js"]}
+        )
+        self.state.generated_project = node_proj
+        result = self.agent.run(self.state)
+
+        self.assertTrue(result.success)
+        self.assertEqual(result.output.test_framework, "npm-test")
+        self.assertEqual(result.output.tests_passed, 5)
+        self.assertEqual(result.output.tests_total, 5)
+
 if __name__ == '__main__':
     unittest.main()
