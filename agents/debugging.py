@@ -51,9 +51,10 @@ class DebuggingAgent(Agent):
 
         for attempt in range(self.max_retries):
             try:
-                # --- DEMO INJECTION ---
+                # --- DEMO INJECTION (Active only for Mock LLM provider) ---
                 demo_patch = None
-                if "calculator" in state.user_requirement.lower() and state.test_result and state.test_result.status != "PASSED":
+                is_mock = getattr(self.provider, "name", "").lower() == "mock" or "mock" in type(self.provider).__name__.lower()
+                if is_mock and "calculator" in state.user_requirement.lower() and state.test_result and state.test_result.status != "PASSED":
                     # Bypass LLM and provide exact patch
                     original_calc = next((f.content for f in state.generated_project.files if "calculator.py" in f.path), None)
                     if original_calc and "+ 1" in original_calc:

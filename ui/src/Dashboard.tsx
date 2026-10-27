@@ -4,8 +4,8 @@ import { Play, Settings, Database, Server, Clock, Activity, CheckCircle, XCircle
 
 export default function Dashboard() {
   const navigate = useNavigate();
-  const [taskDesc, setTaskDesc] = useState('');
-  const [requirements, setRequirements] = useState('');
+  const [taskDesc, setTaskDesc] = useState('Build a Python calculator module with add, subtract, multiply, divide, division-by-zero handling, and pytest tests.');
+  const [requirements, setRequirements] = useState('Implement add, subtract, multiply, and divide\nHandle division by zero with ValueError\nProvide full pytest test coverage');
   const [useRag, setUseRag] = useState(false);
   const [useMemory, setUseMemory] = useState(false);
   const [provider, setProvider] = useState('groq');

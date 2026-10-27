@@ -130,7 +130,10 @@ class ArchitectureSpecification:
         )
 
 def parse_json_response(text: str) -> dict:
-    # Attempt to extract JSON from code blocks
+    if not text:
+        raise ValueError("Empty response text")
+
+    # 1. Attempt to extract JSON from code blocks
     match = re.search(r'```(?:json)?\s*(\{.*?\})\s*```', text, re.DOTALL)
     if match:
         try:
@@ -138,7 +141,17 @@ def parse_json_response(text: str) -> dict:
         except json.JSONDecodeError:
             pass
             
-    # Try parsing the whole thing
+    # 2. Extract outermost JSON object { ... }
+    first_brace = text.find('{')
+    last_brace = text.rfind('}')
+    if first_brace != -1 and last_brace > first_brace:
+        candidate = text[first_brace:last_brace + 1]
+        try:
+            return json.loads(candidate)
+        except json.JSONDecodeError:
+            pass
+
+    # 3. Try parsing the whole thing
     return json.loads(text)
 
 @dataclass

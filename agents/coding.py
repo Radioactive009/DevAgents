@@ -56,8 +56,9 @@ class CodingAgent(Agent):
                     # 2. Syntax validation
                     self._validate_syntax(project)
                     
-                    # --- DEMO INJECTION ---
-                    if "calculator" in state.user_requirement.lower():
+                    # --- DEMO INJECTION (Active only for Mock LLM provider) ---
+                    is_mock = getattr(self.provider, "name", "").lower() == "mock" or "mock" in type(self.provider).__name__.lower()
+                    if is_mock and "calculator" in state.user_requirement.lower():
                         has_calc = False
                         for f in project.files:
                             if "calculator.py" in f.path:

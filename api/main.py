@@ -33,8 +33,8 @@ class RunRequest(BaseModel):
     use_rag: bool = False
     use_memory: bool = False
     use_tools: bool = True
-    provider: str = "openrouter"
-    model: str = "meta-llama/llama-3.1-70b-instruct"
+    provider: str = "groq"
+    model: Optional[str] = None
     system: str = "MULTI_AGENT"
 
 # Global memory to store current runs
@@ -46,8 +46,6 @@ def execute_run(run_id: str, request: RunRequest):
     # Respect requested provider and model
     if not request.provider:
         request.provider = "mock"
-    if not request.model:
-        request.model = "mock-model"
     
     try:
         # Create providers
