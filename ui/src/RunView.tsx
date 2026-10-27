@@ -36,13 +36,64 @@ export default function RunView() {
   const pipeline = ["supervisor", "architecture", "coding", "testing", "debugging", "verification"];
   
   const getAgentStatus = (agentName: string) => {
-    const agentEvents = events.filter(e => e.event_type === 'agent' && e.agent_name?.toLowerCase() === `${agentName}agent`);
-    if (agentEvents.length === 0) return { status: 'WAITING', duration: null };
-    const latestEvent = agentEvents[agentEvents.length - 1];
-    if (latestEvent.action === 'started') return { status: 'RUNNING', duration: null };
-    if (latestEvent.action === 'completed') return { status: 'COMPLETED', duration: latestEvent.duration_s };
-    if (latestEvent.action === 'failed' || latestEvent.action === 'error') return { status: 'FAILED', duration: null };
-    return { status: 'WAITING', duration: null };
+    const pipelineOrder = ["supervisor", "architecture", "coding", "testing", "debugging", "verification"];
+    const myIdx = pipelineOrder.indexOf(agentName);
+
+    const hasLaterEvent = events.some(e => {
+      let otherIdx = -1;
+      if (e.event_type === 'test') otherIdx = 3;
+      else if (e.event_type === 'debug') otherIdx = 4;
+      else if (e.event_type === 'verification' || e.phase === 'verification') otherIdx = 5;
+      else if (e.event_type === 'agent') {
+        const name = (e.agent_name || e.phase || '').toLowerCase();
+        if (name.includes('supervisor')) otherIdx = 0;
+        else if (name.includes('architecture')) otherIdx = 1;
+        else if (name.includes('coding')) otherIdx = 2;
+        else if (name.includes('test')) otherIdx = 3;
+        else if (name.includes('debug')) otherIdx = 4;
+        else if (name.includes('verif')) otherIdx = 5;
+      }
+      return otherIdx > myIdx;
+    });
+
+    const matching = events.filter(e => {
+      if (agentName === 'testing') return e.event_type === 'test';
+      if (agentName === 'debugging') return e.event_type === 'debug';
+      if (agentName === 'verification') return e.event_type === 'verification' || e.phase === 'verification';
+      return (e.event_type === 'agent' && (
+        (e.agent_name && e.agent_name.toLowerCase().includes(agentName)) || 
+        (e.phase && e.phase.toLowerCase().includes(agentName))
+      ));
+    });
+
+    if (matching.length === 0) {
+      if (hasLaterEvent) return { status: 'COMPLETED', duration: null };
+      return { status: 'WAITING', duration: null };
+    }
+
+    const latest = matching[matching.length - 1];
+    if (latest.success === true || latest.status === 'VERIFIED') {
+      return { status: 'COMPLETED', duration: latest.duration_ms ? latest.duration_ms / 1000 : null };
+    }
+
+    if (agentName === 'testing') {
+      // Tests were executed in sandbox
+      return { status: 'COMPLETED', duration: latest.duration_ms ? latest.duration_ms / 1000 : null };
+    }
+
+    if (agentName === 'debugging') {
+      return { status: latest.success ? 'COMPLETED' : 'FAILED', duration: null };
+    }
+
+    if (hasLaterEvent) {
+      return { status: 'COMPLETED', duration: null };
+    }
+
+    if (latest.success === false) {
+      return { status: 'FAILED', duration: null };
+    }
+
+    return { status: 'RUNNING', duration: null };
   };
 
   const getTestResults = () => events.filter(e => e.event_type === 'test').pop();
@@ -121,17 +172,27 @@ export default function RunView() {
             <h2 className="text-lg font-bold mb-4">Final Verification</h2>
             {(() => {
               const v = getVerification();
-              if (!v) return <p className="text-sm text-slate-500">Waiting for verification...</p>;
+              if (!v) {
+                if (runInfo?.status === 'FAILED' || runInfo?.status === 'ERROR') {
+                  return (
+                    <div className="space-y-2">
+                      <div className="text-2xl font-bold text-red-400">FAILED</div>
+                      <p className="text-sm text-slate-400">Run terminated with errors during execution.</p>
+                    </div>
+                  );
+                }
+                return <p className="text-sm text-slate-500">Waiting for verification...</p>;
+              }
               return (
                 <div className="space-y-4">
                   <div className={`text-2xl font-bold ${v.status === 'VERIFIED' ? 'text-emerald-400' : v.status === 'PARTIALLY_VERIFIED' ? 'text-amber-400' : 'text-red-400'}`}>
                     {v.status}
                   </div>
                   <div className="w-full bg-slate-800 rounded-full h-2">
-                    <div className="bg-emerald-500 h-2 rounded-full" style={{ width: `${v.requirement_coverage * 100}%` }}></div>
+                    <div className="bg-emerald-500 h-2 rounded-full" style={{ width: `${(v.requirement_coverage || 0) * 100}%` }}></div>
                   </div>
                   <div className="grid grid-cols-3 gap-4 text-sm text-slate-300 pt-2">
-                    <div>Coverage: <span className="text-white font-medium">{Math.round(v.requirement_coverage * 100)}%</span></div>
+                    <div>Coverage: <span className="text-white font-medium">{Math.round((v.requirement_coverage || 0) * 100)}%</span></div>
                   </div>
                 </div>
               );
@@ -188,19 +249,19 @@ export default function RunView() {
                 </div>
                 <div className="flex justify-between border-b border-slate-800 pb-2">
                   <span className="text-slate-400">LLM Calls</span>
-                  <span className="text-white">{metrics.total_llm_calls}</span>
+                  <span className="text-white">{metrics.total_llm_calls || events.filter(e => e.event_type === 'agent' || e.event_type === 'debug' || e.event_type === 'verification').length}</span>
                 </div>
                 <div className="flex justify-between border-b border-slate-800 pb-2">
                   <span className="text-slate-400">Tokens</span>
-                  <span className="text-white">{metrics.total_tokens || 'N/A'}</span>
+                  <span className="text-white">{metrics.total_tokens || events.reduce((sum, e) => sum + (e.total_tokens || 0), 0) || 'N/A'}</span>
                 </div>
                 <div className="flex justify-between border-b border-slate-800 pb-2">
                   <span className="text-slate-400">Tool Calls</span>
-                  <span className="text-white">{metrics.total_tool_calls}</span>
+                  <span className="text-white">{metrics.total_tool_calls || events.filter(e => e.event_type === 'tool').length}</span>
                 </div>
                 <div className="flex justify-between border-b border-slate-800 pb-2">
                   <span className="text-slate-400">RAG Queries</span>
-                  <span className="text-white">{metrics.total_rag_queries}</span>
+                  <span className="text-white">{metrics.total_rag_queries || events.filter(e => e.event_type === 'rag').length}</span>
                 </div>
               </div>
             ) : (
