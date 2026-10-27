@@ -2,7 +2,8 @@ import { useState, useEffect } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { 
   ArrowLeft, CheckCircle, Clock, XCircle, Activity, Code, Server, 
-  Database, Globe, ExternalLink, RefreshCw, AlertTriangle, ShieldCheck 
+  Database, Globe, ExternalLink, RefreshCw, AlertTriangle, ShieldCheck,
+  GitBranch, UploadCloud, RotateCw, CheckCircle2
 } from 'lucide-react';
 
 export default function RunView() {
@@ -12,6 +13,10 @@ export default function RunView() {
   const [runInfo, setRunInfo] = useState<any>(null);
   const [runState, setRunState] = useState<any>(null);
   const [previewStatus, setPreviewStatus] = useState<any>(null);
+  const [deployment, setDeployment] = useState<any>(null);
+  const [isDeploying, setIsDeploying] = useState<boolean>(false);
+  const [deployMock, setDeployMock] = useState<boolean>(false);
+  const [deployPrivate, setDeployPrivate] = useState<boolean>(true);
 
   const [files, setFiles] = useState<any>({});
   const [selectedFile, setSelectedFile] = useState<string | null>(null);
@@ -66,9 +71,34 @@ export default function RunView() {
           }
         })
         .catch(() => {});
+
+      fetch(`/api/runs/${runId}/deployment`)
+        .then(r => { if (r.ok) return r.json(); return null; })
+        .then(data => { if (data) setDeployment(data); })
+        .catch(() => {});
     }, 1000);
     return () => clearInterval(interval);
   }, [runId]);
+
+  const handleDeploy = async () => {
+    setIsDeploying(true);
+    try {
+      await fetch(`/api/runs/${runId}/deploy`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ is_private: deployPrivate, use_mock: deployMock })
+      });
+      const r = await fetch(`/api/runs/${runId}/deployment`);
+      if (r.ok) {
+        const data = await r.json();
+        setDeployment(data);
+      }
+    } catch (e) {
+      console.error("Deploy trigger failed:", e);
+    } finally {
+      setIsDeploying(false);
+    }
+  };
 
   const handleApprovalDecision = async (decision: 'APPROVE' | 'REJECT') => {
     setIsSubmittingApproval(true);
@@ -369,6 +399,172 @@ export default function RunView() {
                 </div>
               );
             })()}
+          </div>
+
+          {/* Autonomous Cloud Deployment & DevOps Card (Phases 1-8) */}
+          <div className="bg-[#161925] border border-slate-800 rounded-xl p-6 shadow-xl space-y-5">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-slate-800/80 pb-4">
+              <div className="flex items-center gap-3">
+                <div className="p-2.5 rounded-lg bg-emerald-500/10 border border-emerald-500/30 text-emerald-400">
+                  <UploadCloud className="w-5 h-5" />
+                </div>
+                <div>
+                  <h2 className="text-lg font-bold text-white flex items-center gap-2">
+                    Cloud Deployment & DevOps
+                    {deployment?.record?.stage && (
+                      <span className={`text-xs px-2.5 py-0.5 rounded-full font-mono font-medium ${
+                        deployment.record.stage === 'HEALTH_CHECK_PASSED' || deployment.record.stage === 'DEPLOYMENT_READY'
+                          ? 'bg-emerald-950/80 text-emerald-400 border border-emerald-700/60'
+                          : deployment.record.stage.includes('FAILED')
+                          ? 'bg-red-950/80 text-red-400 border border-red-700/60'
+                          : 'bg-blue-950/80 text-blue-300 border border-blue-700/60 animate-pulse'
+                      }`}>
+                        {deployment.record.stage}
+                      </span>
+                    )}
+                  </h2>
+                  <p className="text-xs text-slate-400">Autonomous GitHub publication, CI/CD quality gate & Vercel live deployment</p>
+                </div>
+              </div>
+
+              {/* Deployment Action Button */}
+              <div className="flex items-center gap-3">
+                <label className="text-xs text-slate-400 flex items-center gap-1.5 cursor-pointer">
+                  <input 
+                    type="checkbox" 
+                    checked={deployMock} 
+                    onChange={e => setDeployMock(e.target.checked)} 
+                    className="rounded border-slate-700 bg-slate-900 text-emerald-500"
+                  />
+                  <span>Mock Mode</span>
+                </label>
+                
+                {deployment?.record?.stage?.includes('FAILED') ? (
+                  <button
+                    onClick={handleDeploy}
+                    disabled={isDeploying}
+                    className="bg-amber-600 hover:bg-amber-500 text-white font-medium px-4 py-2 rounded-lg text-xs transition-colors flex items-center gap-1.5 shadow-lg shadow-amber-700/20"
+                  >
+                    <RotateCw className={`w-3.5 h-3.5 ${isDeploying ? 'animate-spin' : ''}`} />
+                    Retry Deployment
+                  </button>
+                ) : (
+                  <button
+                    onClick={handleDeploy}
+                    disabled={isDeploying || isRunning || Object.keys(files).length === 0}
+                    className="bg-emerald-600 hover:bg-emerald-500 disabled:opacity-50 text-white font-medium px-4 py-2 rounded-lg text-xs transition-colors flex items-center gap-1.5 shadow-lg shadow-emerald-700/20"
+                  >
+                    <UploadCloud className={`w-3.5 h-3.5 ${isDeploying ? 'animate-spin' : ''}`} />
+                    {deployment?.record ? 'Redeploy Application' : 'Deploy to GitHub & Vercel'}
+                  </button>
+                )}
+              </div>
+            </div>
+
+            {/* Deployment Error Banner if Failed */}
+            {deployment?.record?.error && (
+              <div className="bg-red-950/30 border border-red-500/40 rounded-lg p-3 text-xs text-red-300 flex items-start gap-2">
+                <AlertTriangle className="w-4 h-4 text-red-400 shrink-0 mt-0.5" />
+                <div className="space-y-1">
+                  <span className="font-semibold text-red-200">Deployment Stalled:</span>
+                  <div className="font-mono">{deployment.record.error}</div>
+                </div>
+              </div>
+            )}
+
+            {/* Active Deployment Details Grid */}
+            {deployment?.record ? (
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                {/* 1. GitHub Repository */}
+                <div className="bg-[#0f111a] border border-slate-800 rounded-lg p-4 space-y-2">
+                  <div className="flex items-center justify-between text-xs text-slate-400">
+                    <span className="flex items-center gap-1.5 font-medium text-slate-300">
+                      <GitBranch className="w-4 h-4 text-slate-400" /> GitHub Repository
+                    </span>
+                    {deployment.record.github?.is_private && (
+                      <span className="px-2 py-0.5 rounded text-[10px] bg-slate-800 text-slate-400 font-mono">PRIVATE</span>
+                    )}
+                  </div>
+                  {deployment.record.github?.repo_url ? (
+                    <div>
+                      <a 
+                        href={deployment.record.github.repo_url} 
+                        target="_blank" 
+                        rel="noopener noreferrer"
+                        className="text-sm font-semibold text-blue-400 hover:text-blue-300 flex items-center gap-1 break-all"
+                      >
+                        {deployment.record.github.repo_name}
+                        <ExternalLink className="w-3.5 h-3.5 shrink-0" />
+                      </a>
+                      <div className="text-[11px] text-slate-500 mt-1 font-mono">
+                        Branch: <span className="text-slate-300">{deployment.record.github.default_branch || 'main'}</span> • Commit: <span className="text-slate-400">{deployment.record.github.commit_sha?.slice(0, 7) || 'HEAD'}</span>
+                      </div>
+                    </div>
+                  ) : (
+                    <p className="text-xs text-slate-500 font-mono">Pending repository creation...</p>
+                  )}
+                </div>
+
+                {/* 2. CI/CD Quality Gate */}
+                <div className="bg-[#0f111a] border border-slate-800 rounded-lg p-4 space-y-2">
+                  <div className="flex items-center justify-between text-xs text-slate-400">
+                    <span className="flex items-center gap-1.5 font-medium text-slate-300">
+                      <ShieldCheck className="w-4 h-4 text-emerald-400" /> CI/CD Quality Gate
+                    </span>
+                    <span className="text-[10px] text-emerald-400 font-mono">CONFIGURED</span>
+                  </div>
+                  <div>
+                    <div className="text-xs font-mono text-slate-200">.github/workflows/ci.yml</div>
+                    <div className="text-[11px] text-slate-500 mt-1">
+                      Automated tests, dependency installation & build checks enabled.
+                    </div>
+                  </div>
+                </div>
+
+                {/* 3. Vercel Production Deployment & Health */}
+                <div className="bg-[#0f111a] border border-slate-800 rounded-lg p-4 space-y-2">
+                  <div className="flex items-center justify-between text-xs text-slate-400">
+                    <span className="flex items-center gap-1.5 font-medium text-slate-300">
+                      <Globe className="w-4 h-4 text-emerald-400" /> Vercel Live URL
+                    </span>
+                    {deployment.record.health_check?.is_healthy ? (
+                      <span className="px-2 py-0.5 rounded text-[10px] bg-emerald-950/80 text-emerald-400 border border-emerald-800 font-mono">
+                        HEALTHY ({Math.round(deployment.record.health_check.latency_ms || 0)}ms)
+                      </span>
+                    ) : deployment.record.vercel?.state ? (
+                      <span className="px-2 py-0.5 rounded text-[10px] bg-blue-950/80 text-blue-300 border border-blue-800 font-mono">
+                        {deployment.record.vercel.state}
+                      </span>
+                    ) : null}
+                  </div>
+                  {deployment.record.vercel?.production_url || deployment.record.vercel?.deployment_url ? (
+                    <div>
+                      <a 
+                        href={deployment.record.vercel.production_url || deployment.record.vercel.deployment_url} 
+                        target="_blank" 
+                        rel="noopener noreferrer"
+                        className="text-sm font-semibold text-emerald-400 hover:text-emerald-300 flex items-center gap-1 break-all"
+                      >
+                        {deployment.record.vercel.production_url || deployment.record.vercel.deployment_url}
+                        <ExternalLink className="w-3.5 h-3.5 shrink-0" />
+                      </a>
+                      <div className="text-[11px] text-slate-500 mt-1 font-mono">
+                        Preset: <span className="text-slate-300">{deployment.record.vercel.framework_preset || 'detected'}</span>
+                      </div>
+                    </div>
+                  ) : (
+                    <p className="text-xs text-slate-500 font-mono">Waiting for Vercel deployment...</p>
+                  )}
+                </div>
+              </div>
+            ) : (
+              <div className="bg-[#0f111a]/50 border border-slate-800/80 rounded-lg p-5 text-center space-y-2">
+                <div className="text-sm font-medium text-slate-300">Ready for Autonomous Cloud Deployment</div>
+                <p className="text-xs text-slate-500 max-w-lg mx-auto">
+                  Click <strong className="text-slate-300">Deploy to GitHub & Vercel</strong> above to automatically create a private GitHub repository, push code with automated CI workflows, and deploy live to Vercel.
+                </p>
+              </div>
+            )}
           </div>
 
           {/* Interactive Code Explorer & Live Web Preview Tabs (Phase 3 & Phase 12) */}
