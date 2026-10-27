@@ -130,10 +130,16 @@ class ArchitectureSpecification:
         )
 
 def repair_json_escapes(s: str) -> str:
-    # Fix invalid escape sequences (e.g. \d, \s, \w, \(, etc.)
-    # In JSON, valid escapes are \", \\, \/, \b, \f, \n, \r, \t, and \uXXXX
-    s = re.sub(r'\\(?![/\\bfnrt"]|u[0-9a-fA-F]{4})', r'\\\\', s)
-    # Fix trailing commas before } or ]
+    # A single \ not part of a valid escape: \\, \", \/, \b, \f, \n, \r, \t, \uXXXX
+    def repl(m):
+        backslashes = m.group(1)
+        next_char = m.group(2)
+        if len(backslashes) % 2 == 1:
+            if next_char not in ['"', '\\', '/', 'b', 'f', 'n', 'r', 't', 'u']:
+                return backslashes + '\\' + next_char
+        return m.group(0)
+
+    s = re.sub(r'(\\+)(.)', repl, s)
     s = re.sub(r',\s*([}\]])', r'\1', s)
     return s
 
@@ -153,19 +159,19 @@ def parse_json_response(text: str) -> dict:
     if not text:
         raise ValueError("Empty response text")
 
-    # 1. Attempt to extract JSON from code blocks
-    match = re.search(r'```(?:json)?\s*(\{.*?\})\s*```', text, re.DOTALL)
-    if match:
-        res = _try_load_json(match.group(1))
-        if res is not None:
-            return res
-            
-    # 2. Extract outermost JSON object { ... }
+    # 1. Extract outermost JSON object { ... }
     first_brace = text.find('{')
     last_brace = text.rfind('}')
     if first_brace != -1 and last_brace > first_brace:
         candidate = text[first_brace:last_brace + 1]
         res = _try_load_json(candidate)
+        if res is not None:
+            return res
+
+    # 2. Attempt to extract JSON from code blocks (outermost)
+    match = re.search(r'```(?:json)?\s*(\{.*\})\s*```', text, re.DOTALL)
+    if match:
+        res = _try_load_json(match.group(1))
         if res is not None:
             return res
 

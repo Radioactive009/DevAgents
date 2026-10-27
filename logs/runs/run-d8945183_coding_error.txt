@@ -1,0 +1,49 @@
+Extra data: line 1 column 2 (char 1)
+
+Raw output:
+2';
+        isLinePrefix = true;
+        break;
+      case 'h3':
+        prefix = '### ';
+        defaultText = 'Heading 3';
+        isLinePrefix = true;
+        break;
+      case 'ul':
+        prefix = '- ';
+        defaultText = 'List item';
+        isLinePrefix = true;
+        break;
+      case 'ol':
+        prefix = '1. ';
+        defaultText = 'List item';
+        isLinePrefix = true;
+        break;
+      case 'blockquote':
+        prefix = '> ';
+        defaultText = 'Blockquote text';
+        isLinePrefix = true;
+        break;
+      case 'code':
+        prefix = '`';
+        suffix = '`';
+        defaultText = 'code';
+        break;
+      case 'codeblock':
+        prefix = '```javascript\n';
+        suffix = '\n```';
+        defaultText = '// Write code here';
+        break;
+      case 'link':
+        prefix = '[';
+        suffix = '](https://example.com)';
+        defaultText = 'link text';
+        break;
+      case 'image':
+        prefix = '![';
+        suffix = '](https://via.placeholder.com/600x300)';
+        defaultText = 'alt text';
+        break;
+      case 'hr':
+        prefix = '\n---\n';
+        suffix =

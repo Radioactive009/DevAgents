@@ -1,0 +1,187 @@
+Expecting value: line 1 column 1 (char 0)
+
+Raw output:
+```json
+{
+  "project_name": "markdown-live-preview-editor",
+  "files": [
+    {
+      "path": "index.html",
+      "content": "<!DOCTYPE html>\n<html lang=\"en\">\n<head>\n    <meta charset=\"UTF-8\">\n    <meta name=\"viewport\" content=\"width=device-width, initial-scale=1.0\">\n    <title>Markdown Live Preview Editor</title>\n    <link rel=\"stylesheet\" href=\"css/style.css\">\n</head>\n<body>\n    <div class=\"editor-container\">\n        <div class=\"toolbar\">\n            <button id=\"bold-btn\"><b>B</b></button>\n            <button id=\"italic-btn\"><i>I</i></button>\n            <button id=\"h1-btn\">H1</button>\n            <button id=\"h2-btn\">H2</button>\n            <button id=\"h3-btn\">H3</button>\n            <button id=\"code-block-btn\">Code</button>\n        </div>\n        <div class=\"split-screen\">\n            <div class=\"pane left-pane\">\n                <textarea id=\"markdown-input\" placeholder=\"Start writing your Markdown here...\"></textarea>\n            </div>\n            <div class=\"pane right-pane\">\n                <div id=\"html-preview\"></div>\n            </div>\n        </div>\n        <div class=\"status-bar\">\n            <span id=\"word-count\">Words: 0</span>\n            <span id=\"char-count\">Chars: 0</span>\n        </div>\n    </div>\n\n    <script src=\"https://cdn.jsdelivr.net/npm/marked/marked.min.js\"></script>\n    <script src=\"js/utils/CounterLogic.js\"></script>\n    <script src=\"js/utils/MarkdownParser.js\"></script>\n    <script src=\"js/utils/ThemeManager.js\"></script>\n    <script src=\"js/components/SplitScreenLayout.js\"></script>\n    <script src=\"js/components/MarkdownInput.js\"></script>\n    <script src=\"js/components/HtmlPreview.js\"></script>\n    <script src=\"js/components/FormattingToolbar.js\"></script>\n    <script src=\"js/components/StatusBar.js\"></script>\n    <script src=\"js/main.js\"></script>\n</body>\n</html>\n",
+      "description": "Main HTML file for the Markdown editor, including structure, links to CSS and JS, and CDN for marked.js.",
+      "requirement_ids": [
+        "REQ-001",
+        "REQ-002",
+        "REQ-003",
+        "REQ-004",
+        "REQ-005",
+        "REQ-006",
+        "REQ-007",
+        "REQ-008"
+      ]
+    },
+    {
+      "path": "css/style.css",
+      "content": ":root {\n    --background-dark: #1e1e1e;\n    --text-dark: #d4d4d4;\n    --primary-dark: #007acc;\n    --secondary-dark: #333333;\n    --border-dark: #444444;\n    --code-background-dark: #2a2a2a;\n}\n\nbody {\n    margin: 0;\n    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;\n    background-color: var(--background-dark);\n    color: var(--text-dark);\n    display: flex;\n    justify-content: center;\n    align-items: center;\n    min-height: 100vh;\n    overflow: hidden;\n}\n\n.editor-container {\n    width: 95%;\n    height: 95vh;\n    display: flex;\n    flex-direction: column;\n    border: 1px solid var(--border-dark);\n    box-shadow: 0 0 20px rgba(0, 0, 0, 0.5);\n    overflow: hidden;\n    background-color: var(--background-dark);\n}\n\n.toolbar {\n    padding: 10px;\n    background-color: var(--secondary-dark);\n    border-bottom: 1px solid var(--border-dark);\n    display: flex;\n    gap: 5px;\n}\n\n.toolbar button {\n    background-color: var(--background-dark);\n    color: var(--text-dark);\n    border: 1px solid var(--border-dark);\n    padding: 8px 12px;\n    cursor: pointer;\n    border-radius: 4px;\n    font-size: 14px;\n    transition: background-color 0.2s ease;\n}\n\n.toolbar button:hover {\n    background-color: var(--primary-dark);\n}\n\n.split-screen {\n    display: flex;\n    flex-grow: 1;\n    overflow: hidden;\n}\n\n.pane {\n    flex: 1;\n    padding: 15px;\n    overflow-y: auto;\n    box-sizing: border-box;\n}\n\n.left-pane {\n    border-right: 1px solid var(--border-dark);\n    display: flex;\n    flex-direction: column;\n}\n\n#markdown-input {\n    width: 100%;\n    height: 100%;\n    background-color: var(--background-dark);\n    color: var(--text-dark);\n    border: none;\n    resize: none;\n    font-family: 'Consolas', 'Monaco', 'Andale Mono', 'Ubuntu Mono', monospace;\n    font-size: 16px;\n    line-height: 1.6;\n    outline: none;\n    padding: 0;\n    box-sizing: border-box;\n}\n\n.right-pane {\n    background-color: var(--background-dark);\n    padding: 20px;\n}\n\n#html-preview {\n    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;\n    line-height: 1.7;\n}\n\n#html-preview h1, #html-preview h2, #html-preview h3 {\n    color: var(--primary-dark);\n    margin-top: 1.5em;\n    margin-bottom: 0.5em;\n}\n\n#html-preview h1 {\n    font-size: 2em;\n}\n\n#html-preview h2 {\n    font-size: 1.75em;\n}\n\n#html-preview h3 {\n    font-size: 1.5em;\n}\n\n#html-preview p {\n    margin-bottom: 1em;\n}\n\n#html-preview a {\n    color: var(--primary-dark);\n    text-decoration: none;\n}\n\n#html-preview a:hover {\n    text-decoration: underline;\n}\n\n#html-preview code {\n    background-color: var(--code-background-dark);\n    padding: 2px 6px;\n    border-radius: 3px;\n    font-family: 'Consolas', 'Monaco', 'Andale Mono', 'Ubuntu Mono', monospace;\n}\n\n#html-preview pre {\n    background-color: var(--code-background-dark);\n    padding: 10px;\n    border-radius: 5px;\n    overflow-x: auto;\n}\n\n#html-preview pre code {\n    background-color: transparent;\n    padding: 0;\n}\n\n#html-preview strong {\n    font-weight: bold;\n}\n\n#html-preview em {\n    font-style: italic;\n}\n\n.status-bar {\n    background-color: var(--secondary-dark);\n    padding: 8px 15px;\n    font-size: 13px;\n    display: flex;\n    justify-content: flex-end;\n    gap: 20px;\n    border-top: 1px solid var(--border-dark);\n}\n\n/* Responsive adjustments */\n@media (max-width: 768px) {\n    .split-screen {\n        flex-direction: column;\n    }\n    .pane {\n        flex: none;\n        width: 100%;\n        height: 50%;\n        overflow-y: auto;\n    }\n    .left-pane {\n        border-right: none;\n        border-bottom: 1px solid var(--border-dark);\n    }\n    .editor-container {\n        height: 100vh;\n        width: 100%;\n    }\n    .toolbar {\n        flex-wrap: wrap;\n        justify-content: center;\n    }\n}\n",
+      "description": "Main CSS file for styling the editor, including dark theme and responsive layout.",
+      "requirement_ids": [
+        "REQ-001",
+        "REQ-007",
+        "REQ-008"
+      ]
+    },
+    {
+      "path": "js/utils/CounterLogic.js",
+      "content": "/**\n * Calculates word and character counts from a given text.\n * @param {string} text The input text.\n * @returns {{wordCount: number, charCount: number}}\n */\nfunction calculateCounts(text) {\n    const charCount = text.length;\n    const words = text.trim().split(/\\s+/);\n    const wordCount = words.length === 1 && words[0] === '' ? 0 : words.length;\n    return { wordCount, charCount };\n}\n",
+      "description": "Utility function to calculate word and character counts.",
+      "requirement_ids": [
+        "REQ-005",
+        "REQ-006"
+      ]
+    },
+    {
+      "path": "js/utils/MarkdownParser.js",
+      "content": "/**\n * Parses Markdown text to HTML using the 'marked' library.\n * @param {string} markdownText The Markdown string to parse.\n * @returns {string} The rendered HTML string.\n */\nfunction parseMarkdown(markdownText) {\n    // Ensure marked is available globally (loaded via CDN)\n    if (typeof marked === 'undefined') {\n        console.error('Marked.js library not loaded.');\n        return '<p>Error: Markdown parser not available.</p>';\n    }\n    // Sanitize HTML output to prevent XSS attacks\n    // Marked.js has built-in sanitization options, but for simplicity and\n    // assuming a trusted environment or basic usage, we'll use default.\n    // For production, consider configuring marked.js with a sanitizer.\n    return marked.parse(markdownText);\n}\n",
+      "description": "Utility function to parse Markdown to HTML using the marked library.",
+      "requirement_ids": [
+        "REQ-003"
+      ]
+    },
+    {
+      "path": "js/utils/ThemeManager.js",
+      "content": "/**\n * Manages the application's theme, specifically the dark theme.\n */\nclass ThemeManager {\n    constructor() {\n        this.isDarkMode = true; // Default to dark mode\n        this.applyTheme();\n    }\n\n    applyTheme() {\n        if (this.isDarkMode) {\n            document.body.classList.add('dark-theme');\n            document.body.classList.remove('light-theme');\n        } else {\n            document.body.classList.add('light-theme');\n            document.body.classList.remove('dark-theme');\n        }\n    }\n\n    toggleTheme() {\n        this.isDarkMode = !this.isDarkMode;\n        this.applyTheme();\n    }\n}\n",
+      "description": "Manages the application's dark theme.",
+      "requirement_ids": [
+        "REQ-008"
+      ]
+    },
+    {
+      "path": "js/components/SplitScreenLayout.js",
+      "content": "/**\n * Manages the split-screen layout.\n * This component primarily relies on CSS for its layout.\n * JavaScript might be used for more advanced features like resizing, \n * but for this requirement, CSS handles the split and responsiveness.\n */\nclass SplitScreenLayout {\n    constructor() {\n        console.log('SplitScreenLayout initialized.');\n        // No specific JS needed for basic split-screen if CSS handles it.\n        // Could add event listeners for window resize if dynamic adjustments were needed.\n    }\n}\n",
+      "description": "Manages the split-screen layout, primarily driven by CSS.",
+      "requirement_ids": [
+        "REQ-001",
+        "REQ-007"
+      ]
+    },
+    {
+      "path": "js/components/MarkdownInput.js",
+      "content": "/**\n * Handles the Markdown input textarea.\n */\nclass MarkdownInput {\n    constructor(textareaId) {\n        this.textarea = document.getElementById(textareaId);\n        if (!this.textarea) {\n            throw new Error(`Element with ID '${textareaId}' not found.`);\n        }\n        this.listeners = [];\n    }\n\n    getValue() {\n        return this.textarea.value;\n    }\n\n    setValue(value) {\n        this.textarea.value = value;\n    }\n\n    onInput(callback) {\n        this.textarea.addEventListener('input', () => {\n            const currentValue = this.getValue();\n            callback(currentValue);\n        });\n    }\n\n    insertText(textToInsert) {\n        const start = this.textarea.selectionStart;\n        const end = this.textarea.selectionEnd;\n        const currentValue = this.textarea.value;\n        this.textarea.value = currentValue.substring(0, start) + textToInsert + currentValue.substring(end);\n        this.textarea.selectionStart = this.textarea.selectionEnd = start + textToInsert.length;\n        this.textarea.focus();\n        // Trigger input event to update preview and counts\n        this.textarea.dispatchEvent(new Event('input', { bubbles: true }));\n    }\n\n    // Helper to insert text with surrounding markdown syntax\n    wrapSelection(openTag, closeTag = '') {\n        const start = this.textarea.selectionStart;\n        const end = this.textarea.selectionEnd;\n        const selectedText = this.textarea.value.substring(start, end);\n        const textToInsert = openTag + selectedText + closeTag;\n        this.insertText(textToInsert);\n    }\n}\n",
+      "description": "Manages the Markdown input textarea and its events.",
+      "requirement_ids": [
+        "REQ-002",
+        "REQ-004"
+      ]
+    },
+    {
+      "path": "js/components/HtmlPreview.js",
+      "content": "/**\n * Renders the parsed HTML content in the preview pane.\n */\nclass HtmlPreview {\n    constructor(previewElementId) {\n        this.previewElement = document.getElementById(previewElementId);\n        if (!this.previewElement) {\n            throw new Error(`Element with ID '${previewElementId}' not found.`);\n        }\n    }\n\n    render(htmlContent) {\n        this.previewElement.innerHTML = htmlContent;\n    }\n}\n",
+      "description": "Handles rendering of HTML content in the preview pane.",
+      "requirement_ids": [
+        "REQ-003"
+      ]
+    },
+    {
+      "path": "js/components/FormattingToolbar.js",
+      "content": "/**\n * Manages the formatting toolbar and its buttons.\n */\nclass FormattingToolbar {\n    constructor(markdownInputInstance) {\n        this.markdownInput = markdownInputInstance;\n        this.setupButtons();\n    }\n\n    setupButtons() {\n        const boldBtn = document.getElementById('bold-btn');\n        const italicBtn = document.getElementById('italic-btn');\n        const h1Btn = document.getElementById('h1-btn');\n        const h2Btn = document.getElementById('h2-btn');\n        const h3Btn = document.getElementById('h3-btn');\n        const codeBlockBtn = document.getElementById('code-block-btn');\n\n        if (boldBtn) boldBtn.addEventListener('click', () => this.markdownInput.wrapSelection('**', '**'));\n        if (italicBtn) italicBtn.addEventListener('click', () => this.markdownInput.wrapSelection('*', '*'));\n        if (h1Btn) h1Btn.addEventListener('click', () => this.applyHeading('# '));\n        if (h2Btn) h2Btn.addEventListener('click', () => this.applyHeading('## '));\n        if (h3Btn) h3Btn.addEventListener('click', () => this.applyHeading('### '));\n        if (codeBlockBtn) codeBlockBtn.addEventListener('click', () => this.markdownInput.wrapSelection('```\n', '\n```'));\n    }\n\n    applyHeading(level) {\n        const start = this.markdownInput.textarea.selectionStart;\n        const end = this.markdownInput.textarea.selectionEnd;\n        const currentLine = this.markdownInput.getValue().substring(0, start).split('\\n').pop();\n        \n        // If the current line already starts with a heading marker, remove it\n        if (currentLine.startsWith('#') || currentLine.startsWith('##') || currentLine.startsWith('###')) {\n            const lineNumber = this.markdownInput.getValue().substring(0, start).split('\\n').length - 1;\n            const lines = this.markdownInput.getValue().split('\\n');\n            const currentLineText = lines[lineNumber];\n            \n            let newLines = [...lines];\n            if (level.startsWith('#')) { // If we are applying a heading\n                // Remove existing heading markers if they exist and are different\n                if (currentLineText.startsWith(level)) {\n                    // If it's the same level, do nothing or toggle\n                    return;\n                } else if (currentLineText.match(/^#{1,3}\\s/)) {\n                    newLines[lineNumber] = currentLineText.replace(/^#{1,3}\\s/, level);\n                } else {\n                    newLines[lineNumber] = level + currentLineText;\n                }\n            } else { // If we are removing heading markers (e.g. applying normal text to a heading line)\n                newLines[lineNumber] = currentLineText.replace(/^#{1,3}\\s/, '');\n            }\n            this.markdownInput.setValue(newLines.join('\\n'));\n            // Adjust cursor position after modification\n            this.markdownInput.textarea.selectionStart = this.markdownInput.textarea.selectionEnd = start + (level.length - currentLine.length);\n        } else {\n            // Otherwise, prepend the heading marker\n            this.markdownInput.wrapSelection(level);\n        }\n        this.markdownInput.textarea.focus();\n        this.markdownInput.textarea.dispatchEvent(new Event('input', { bubbles: true }));\n    }\n}\n",
+      "description": "Manages the formatting toolbar buttons and their actions.",
+      "requirement_ids": [
+        "REQ-004"
+      ]
+    },
+    {
+      "path": "js/components/StatusBar.js",
+      "content": "/**\n * Manages the status bar, displaying word and character counts.\n */\nclass StatusBar {\n    constructor(wordCountElementId, charCountElementId) {\n        this.wordCountElement = document.getElementById(wordCountElementId);\n        this.charCountElement = document.getElementById(charCountElementId);\n\n        if (!this.wordCountElement || !this.charCountElement) {\n            throw new Error('Status bar elements not found.');\n        }\n    }\n\n    updateCounts(wordCount, charCount) {\n        this.wordCountElement.textContent = `Words: ${wordCount}`;\n        this.charCountElement.textContent = `Chars: ${charCount}`;\n    }\n}\n",
+      "description": "Manages the status bar to display word and character counts.",
+      "requirement_ids": [
+        "REQ-005",
+        "REQ-006"
+      ]
+    },
+    {
+      "path": "js/main.js",
+      "content": "document.addEventListener('DOMContentLoaded', () => {\n    // Initialize components\n    const splitScreenLayout = new SplitScreenLayout();\n    const markdownInput = new MarkdownInput('markdown-input');\n    const htmlPreview = new HtmlPreview('html-preview');\n    const statusBar = new StatusBar('word-count', 'char-count');\n    const formattingToolbar = new FormattingToolbar(markdownInput);\n    const themeManager = new ThemeManager(); // Assuming dark theme is default\n\n    // Initial rendering and count update\n    const initialMarkdown = \"# Welcome to the Markdown Editor!\\n\\nThis is a **live preview** editor. Write your Markdown on the left and see the HTML on the right.\\n\\n*   Item 1\n*   Item 2\n\n\`\`\`javascript\nconsole.log('Hello, Markdown!');\n\`\`\`\";\n    markdownInput.setValue(initialMarkdown);\n    updatePreviewAndCounts(initialMarkdown);\n\n    // Event listener for input changes\n    markdownInput.onInput((currentMarkdown) => {\n        updatePreviewAndCounts(currentMarkdown);\n    });\n\n    function updatePreviewAndCounts(markdownText) {\n        // Parse Markdown to HTML\n        const html = parseMarkdown(markdownText);\n        htmlPreview.render(html);\n\n        // Calculate and update counts\n        const { wordCount, charCount } = calculateCounts(markdownText);\n        statusBar.updateCounts(wordCount, charCount);\n    }\n\n    // Example of how to toggle theme if a button was added\n    // const themeToggleBtn = document.getElementById('theme-toggle');\n    // if (themeToggleBtn) {\n    //     themeToggleBtn.addEventListener('click', () => themeManager.toggleTheme());\n    // }\n});\n",
+      "description": "Main JavaScript file to initialize and connect all components.",
+      "requirement_ids": [
+        "REQ-001",
+        "REQ-002",
+        "REQ-003",
+        "REQ-004",
+        "REQ-005",
+        "REQ-006",
+        "REQ-007",
+        "REQ-008"
+      ]
+    },
+    {
+      "path": "tests/test_parser.js",
+      "content": "const assert = require('node:assert');\n\n// Mock the 'marked' library if it's not available in the Node.js environment\n// In a real scenario, you might install 'marked' as a dev dependency\n// and import it, or ensure it's globally available if running in a browser-like env.\n// For this test, we'll assume parseMarkdown uses a globally available 'marked' or mock it.\n\n// Mocking marked for Node.js environment if not present\nif (typeof marked === 'undefined') {\n    global.marked = {\n        parse: function(markdown) {\n            // Simple mock for basic cases\n            if (markdown.includes('**bold**')) return '<p><strong>bold</strong></p>';\n            if (markdown.includes('*italic*')) return '<p><em>italic</em></p>';\n            if (markdown.includes('# Heading')) return '<h1>Heading</h1>';\n            if (markdown.includes('```')) return '<pre><code>code</code></pre>';\n            return `<p>${markdown}</p>`;\n        }\n    };\n}\n\n// Assuming parseMarkdown is available globally or imported\n// If it's in a separate file, you'd need to require/import it.\n// For this example, we'll redefine it here or assume it's loaded.\n\n// Re-defining parseMarkdown for testing purposes within this file\nfunction parseMarkdown(markdownText) {\n    if (typeof marked === 'undefined') {\n        console.error('Marked.js library not loaded.');\n        return '<p>Error: Markdown parser not available.</p>';\n    }\n    return marked.parse(markdownText);\n}\n\n// --- Test Cases for parseMarkdown --- \n\nconsole.log('Running tests for Markdown Parser...');\n\n// Test Case 1: Basic paragraph\nlet markdown1 = \"Hello, world!\";\nlet expectedHtml1 = \"<p>Hello, world!</p>\";\nlet actualHtml1 = parseMarkdown(markdown1);\nassert.strictEqual(actualHtml1.trim(), expectedHtml1.trim(), `Test Case 1 Failed: Basic paragraph. Expected: ${expectedHtml1}, Got: ${actualHtml1}`);\nconsole.log('Test Case 1 Passed: Basic paragraph.');\n\n// Test Case 2: Bold text\nlet markdown2 = \"This is **bold** text.\";\nlet expectedHtml2 = \"<p>This is <strong>bold</strong> text.</p>\";\nlet actualHtml2 = parseMarkdown(markdown2);\n// Marked.js might add extra newlines or wrap in <p>, so we trim and compare.\nassert.strictEqual(actualHtml2.trim(), expectedHtml2.trim(), `Test Case 2 Failed: Bold text. Expected: ${expectedHtml2}, Got: ${actualHtml2}`);\nconsole.log('Test Case 2 Passed: Bold text.');\n\n// Test Case 3: Italic text\nlet markdown3 = \"This is *italic* text.\";\nlet expectedHtml3 = \"<p>This is <em>italic</em> text.</p>\";\nlet actualHtml3 = parseMarkdown(markdown3);\nassert.strictEqual(actualHtml3.trim(), expectedHtml3.trim(), `Test Case 3 Failed: Italic text. Expected: ${expectedHtml3}, Got: ${actualHtml3}`);\nconsole.log('Test Case 3 Passed: Italic text.');\n\n// Test Case 4: H1 Heading\nlet markdown4 = \"# Main Heading\";\nlet expectedHtml4 = \"<h1>Main Heading</h1>\";\nlet actualHtml4 = parseMarkdown(markdown4);\nassert.strictEqual(actualHtml4.trim(), expectedHtml4.trim(), `Test Case 4 Failed: H1 Heading. Expected: ${expectedHtml4}, Got: ${actualHtml4}`);\nconsole.log('Test Case 4 Passed: H1 Heading.');\n\n// Test Case 5: H2 Heading\nlet markdown5 = \"## Sub Heading\";\nlet expectedHtml5 = \"<h2>Sub Heading</h2>\";\nlet actualHtml5 = parseMarkdown(markdown5);\nassert.strictEqual(actualHtml5.trim(), expectedHtml5.trim(), `Test Case 5 Failed: H2 Heading. Expected: ${expectedHtml5}, Got: ${actualHtml5}`);\nconsole.log('Test Case 5 Passed: H2 Heading.');\n\n// Test Case 6: H3 Heading\nlet markdown6 = \"### Another Heading\";\nlet expectedHtml6 = \"<h3>Another Heading</h3>\";\nlet actualHtml6 = parseMarkdown(markdown6);\nassert.strictEqual(actualHtml6.trim(), expectedHtml6.trim(), `Test Case 6 Failed: H3 Heading. Expected: ${expectedHtml6}, Got: ${actualHtml6}`);\nconsole.log('Test Case 6 Passed: H3 Heading.');\n\n// Test Case 7: Code Block\nlet markdown7 = \"```\\nconsole.log('code');\\n```\";\nlet expectedHtml7 = \"<pre><code class=\\\"language-text\\\">console.log('code');\\n</code></pre>\"; // Marked often adds language-text by default\nlet actualHtml7 = parseMarkdown(markdown7);\n// Marked.js output can vary slightly, especially with code blocks. Adjust expected if needed.\n// For simplicity, we'll check if it contains the core code.\nassert(actualHtml7.includes('<code>console.log(\'code\');</code>'), `Test Case 7 Failed: Code Block. Expected to contain '<code>console.log(\\'code\\');</code>', Got: ${actualHtml7}`);\nconsole.log('Test Case 7 Passed: Code Block.');\n\n// Test Case 8: List Item\nlet markdown8 = \"* List item 1\\n* List item 2\";\nlet expectedHtml8 = \"<ul>\\n<li>List item 1</li>\\n<li>List item 2</li>\\n</ul>\";\nlet actualHtml8 = parseMarkdown(markdown8);\nassert.strictEqual(actualHtml8.trim(), expectedHtml8.trim(), `Test Case 8 Failed: List Item. Expected: ${expectedHtml8}, Got: ${actualHtml8}`);\nconsole.log('Test Case 8 Passed: List Item.');\n\n// Test Case 9: Mixed content\nlet markdown9 = \"# Title\\n\\nThis is a paragraph with **bold** and *italic* text.\\n\\nAnother paragraph.\";\nlet expectedHtml9 = \"<h1>Title</h1>\\n<p>This is a paragraph with <strong>bold</strong> and <em>italic</em> text.</p>\\n<p>Another paragraph.</p>\";\nlet actualHtml9 = parseMarkdown(markdown9);\nassert.strictEqual(actualHtml9.trim(), expectedHtml9.trim(), `Test Case 9 Failed: Mixed content. Expected: ${expectedHtml9}, Got: ${actualHtml9}`);\nconsole.log('Test Case 9 Passed: Mixed content.');\n\nconsole.log('All Markdown parser tests completed.');\n",
+      "description": "Unit tests for the Markdown parsing functions using Node.js assert module.",
+      "requirement_ids": [
+        "REQ-009"
+      ]
+    }
+  ],
+  "entrypoint": "index.html",
+  "run_command": "echo 'Open index.html in your browser to view the application.'",
+  "test_command": "node tests/test_parser.js",
+  "dependencies": [
+    "marked.min.js (via CDN)",
+    "Node.js (for running tests)"
+  ],
+  "requirement_coverage": {
+    "REQ-001": [
+      "index.html",
+      "css/style.css",
+      "js/components/SplitScreenLayout.js",
+      "js/main.js"
+    ],
+    "REQ-002": [
+      "index.html",
+      "js/components/MarkdownInput.js",
+      "js/main.js"
+    ],
+    "REQ-003": [
+      "index.html",
+      "js/utils/MarkdownParser.js",
+      "js/components/HtmlPreview.js",
+      "js/main.js",
+      "tests/test_parser.js"
+    ],
+    "REQ-004": [
+      "index.html",
+      "js/components/FormattingToolbar.js",
+      "js/components/MarkdownInput.js",
+      "js/main.js"
+    ],
+    "REQ-005": [
+      "index.html",
+      "js/utils/CounterLogic.js",
+      "js/components/StatusBar.js",
+      "js/main.js"
+    ],
+    "REQ-006": [
+      "index.html",
+      "js/utils/CounterLogic.js",
+      "js/components/StatusBar.js",
+      "js/main.js"
+    ],
+    "REQ-007": [
+      "index.html",
+      "css/style.css",
+      "js/components/SplitScreenLayout.js",
+      "js/main.js"
+    ],
+    "REQ-008": [
+      "index.html",
+      "css/style.css",
+      "js/utils/ThemeManager.js",
+      "js/main.js"
+    ],
+    "REQ-009": [
+      "tests/test_parser.js",
+      "js/utils/MarkdownParser.js"
+    ]
+  }
+}
+```
