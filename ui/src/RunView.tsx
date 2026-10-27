@@ -160,6 +160,14 @@ export default function RunView() {
 
   const isPendingApproval = runState?.approval_status === 'PENDING_APPROVAL';
 
+  const errorMessage = runInfo?.error || 
+    runState?.metadata?.coding_error || 
+    runState?.metadata?.supervisor_error || 
+    runState?.metadata?.architecture_error || 
+    runState?.metadata?.testing_error || 
+    events.slice().reverse().find(e => e.event_type === 'error' || e.error_message || (e.event_type === 'agent' && e.success === false && e.action))?.error_message ||
+    (runInfo?.status === 'FAILED' ? (runInfo?.final_status || 'Pipeline execution encountered a failure.') : null);
+
   return (
     <div className="space-y-6 max-w-7xl mx-auto">
       <Link to="/" className="inline-flex items-center gap-2 text-slate-400 hover:text-white transition-colors text-sm">
@@ -216,6 +224,30 @@ export default function RunView() {
           </div>
         </div>
       )}
+
+      {/* Pipeline Error Banner */}
+      {errorMessage && (
+        <div className="bg-red-950/40 border border-red-500/60 rounded-xl p-5 shadow-2xl backdrop-blur-sm">
+          <div className="flex items-start gap-3">
+            <AlertTriangle className="w-6 h-6 text-red-400 shrink-0 mt-0.5" />
+            <div className="space-y-2 w-full">
+              <div className="flex items-center justify-between">
+                <h3 className="font-semibold text-red-200 text-base">Pipeline Execution Halted</h3>
+                <span className="text-xs bg-red-900/60 text-red-300 border border-red-700/60 px-2.5 py-0.5 rounded-full font-mono">
+                  {runInfo?.final_status || 'EXECUTION_FAILED'}
+                </span>
+              </div>
+              <p className="text-sm text-red-300 font-mono bg-black/50 p-3 rounded-lg border border-red-900/50 break-words whitespace-pre-wrap max-h-48 overflow-y-auto">
+                {String(errorMessage)}
+              </p>
+              <div className="text-xs text-red-300/80 flex flex-wrap gap-2 items-center pt-1">
+                <span className="font-medium text-red-200">Troubleshooting:</span>
+                <span>If this is a TPM limit or 401 error, try switching to <strong>OpenRouter</strong> or <strong>Mock</strong> on the Dashboard.</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
       
       <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
         <div className="lg:col-span-3 space-y-6">
@@ -233,12 +265,14 @@ export default function RunView() {
                     <div className={`w-full text-center py-3 px-4 rounded-lg border font-medium text-sm transition-all duration-300 ${
                       status === 'COMPLETED' ? 'bg-emerald-900/20 border-emerald-500/50 text-emerald-400 shadow-[0_0_15px_rgba(16,185,129,0.2)]' :
                       status === 'RUNNING' ? 'bg-blue-900/30 border-blue-400 text-blue-300 shadow-[0_0_20px_rgba(59,130,246,0.8)] scale-105' :
+                      status === 'FAILED' ? 'bg-red-950/40 border-red-500/60 text-red-400 shadow-[0_0_15px_rgba(239,68,68,0.3)]' :
                       'bg-[#0f111a] border-slate-800 text-slate-500'
                     }`}>
                       {agent.charAt(0).toUpperCase() + agent.slice(1)}
                     </div>
                     {status === 'COMPLETED' && <CheckCircle className="w-4 h-4 text-emerald-500" />}
                     {status === 'RUNNING' && <Clock className="w-4 h-4 text-blue-400 animate-spin" />}
+                    {status === 'FAILED' && <XCircle className="w-4 h-4 text-red-500" />}
                   </div>
                 );
               })}

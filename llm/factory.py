@@ -11,8 +11,8 @@ def create_llm_provider(config: Dict[str, Any]) -> LLMProvider:
         return MockLLMProvider()
     elif provider_name == "groq":
         from .providers.groq_provider import GroqProvider
-        if not model_name or model_name in ["mock-model", "default", "llama-3.1-8b-instant", "meta-llama/llama-3.1-70b-instruct"]:
-            model_name = os.environ.get("GROQ_MODEL", "openai/gpt-oss-120b")
+        if not model_name or model_name in ["mock-model", "default", "llama-3.1-8b-instant", "meta-llama/llama-3.1-70b-instruct", "openai/gpt-oss-120b"]:
+            model_name = os.environ.get("GROQ_MODEL", "qwen/qwen3.8-27b")
         return GroqProvider(model=model_name)
     elif provider_name in ["openrouter", "or"]:
         from .providers.openrouter_provider import OpenRouterProvider

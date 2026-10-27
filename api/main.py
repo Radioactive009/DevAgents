@@ -42,6 +42,7 @@ class RunRequest(BaseModel):
 # Global memory to store current runs
 active_runs = {}
 active_runs_state = {}
+run_errors = {}
 state_lock = threading.Lock()
 
 def execute_run(run_id: str, request: RunRequest):
@@ -104,12 +105,23 @@ def execute_run(run_id: str, request: RunRequest):
                 state=state
             )
         
-        active_runs[run_id] = "COMPLETED"
+        telemetry = Telemetry.get_instance()
+        record = telemetry.runs.get(run_id)
+        if record and getattr(record, "final_status", "") in ["SUPERVISOR_FAILED", "ARCHITECTURE_FAILED", "CODING_FAILED", "INFRASTRUCTURE_ERROR", "HUMAN_APPROVAL_REJECTED"]:
+            active_runs[run_id] = "FAILED"
+            run_errors[run_id] = (state.metadata.get("coding_error") or 
+                                  state.metadata.get("architecture_error") or 
+                                  state.metadata.get("supervisor_error") or 
+                                  state.metadata.get("testing_error") or 
+                                  f"Workflow halted at phase: {record.final_status}")
+        else:
+            active_runs[run_id] = "COMPLETED"
     except Exception as e:
         print(f"Run failed: {e}")
         import traceback
         traceback.print_exc()
         active_runs[run_id] = "FAILED"
+        run_errors[run_id] = str(e)
 
 @app.post("/api/runs")
 async def create_run(request: RunRequest):
@@ -125,6 +137,17 @@ async def get_run(run_id: str):
     status = active_runs.get(run_id, "COMPLETED" if run_id in telemetry.runs else "UNKNOWN")
     
     record = telemetry.runs.get(run_id)
+    err = run_errors.get(run_id)
+    if not err and record and getattr(record, "final_status", "") in ["SUPERVISOR_FAILED", "ARCHITECTURE_FAILED", "CODING_FAILED", "INFRASTRUCTURE_ERROR", "HUMAN_APPROVAL_REJECTED"]:
+        state = active_runs_state.get(run_id)
+        if state:
+            err = (state.metadata.get("coding_error") or 
+                   state.metadata.get("architecture_error") or 
+                   state.metadata.get("supervisor_error") or 
+                   state.metadata.get("testing_error"))
+        if not err:
+            err = f"Pipeline halted with status: {record.final_status}"
+            
     if record:
         return {
             "run_id": run_id,
@@ -133,9 +156,10 @@ async def get_run(run_id: str):
             "provider": record.provider,
             "model": record.model,
             "duration": getattr(record, "duration_s", None),
-            "final_status": getattr(record, "final_status", None)
+            "final_status": getattr(record, "final_status", None),
+            "error": err
         }
-    return {"run_id": run_id, "status": status}
+    return {"run_id": run_id, "status": status, "error": err}
 
 @app.get("/api/runs/{run_id}/events")
 async def get_run_events(run_id: str):

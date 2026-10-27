@@ -46,4 +46,7 @@ You must output your response as valid JSON matching this schema:
 }
 
 Ensure your decisions are practical and fulfill the user requirement.
+IMPORTANT FOR WEB / UI APPLICATIONS:
+If the user requirement requests a web app, dashboard, task manager, UI, or interactive interface, ALWAYS ensure the directory structure and components include an 'index.html' file at the root level (with modern CSS/styling and JavaScript) so that the application can be rendered in the browser live preview.
+
 Output JSON only. Do not output anything else.

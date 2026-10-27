@@ -34,3 +34,5 @@ Output your response as valid JSON matching this schema:
 }
 
 Do not include markdown explanations outside the JSON object. Do not expose secrets or API keys.
+IMPORTANT FOR WEB / UI APPLICATIONS:
+If the project requirement involves a web interface, task manager, dashboard, or UI, ALWAYS generate a complete, working 'index.html' file at the root level containing HTML structure, modern CSS styles (e.g. Tailwind CDN or embedded CSS), and full JavaScript logic so it can be previewed immediately in the Live Web Preview.
