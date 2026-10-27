@@ -416,6 +416,70 @@ async def get_preview_file(run_id: str, file_path: str):
     finally:
         state_lock.release()
 
+class DeployRequest(BaseModel):
+    project_name: Optional[str] = None
+    is_private: bool = True
+    use_mock: bool = False
+
+@app.get("/api/deployment/config")
+async def get_deployment_config():
+    from deployment.github_service import GitHubPublishingService
+    from deployment.vercel_service import VercelService
+    
+    gh = GitHubPublishingService()
+    vc = VercelService()
+    
+    gh_status = gh.check_auth()
+    vc_status = vc.check_auth()
+    
+    return {
+        "github": gh_status,
+        "vercel": vc_status
+    }
+
+@app.post("/api/runs/{run_id}/deploy")
+async def trigger_run_deployment(run_id: str, request: DeployRequest = DeployRequest()):
+    file_map = get_file_map_for_run(run_id)
+    if not file_map:
+        raise HTTPException(status_code=400, detail="Cannot deploy run: no generated project files found.")
+    
+    state = active_runs_state.get(run_id)
+    project_name = request.project_name
+    if not project_name:
+        if state and state.user_requirement:
+            words = "".join(c if c.isalnum() else " " for c in state.user_requirement[:40]).split()
+            project_name = "-".join(words[:4]).lower() or f"devagent-app-{run_id}"
+        else:
+            project_name = f"devagent-app-{run_id}"
+            
+    from deployment.manager import DeploymentManager
+    manager = DeploymentManager()
+    
+    def run_deployment_worker():
+        manager.deploy_run(
+            run_id=run_id,
+            project_name=project_name,
+            files=file_map,
+            is_private=request.is_private,
+            use_mock=request.use_mock
+        )
+        
+    threading.Thread(target=run_deployment_worker, daemon=True).start()
+    return {"status": "DEPLOYMENT_STARTED", "run_id": run_id, "project_name": project_name}
+
+@app.get("/api/runs/{run_id}/deployment")
+async def get_run_deployment(run_id: str):
+    from deployment.manager import DeploymentManager
+    manager = DeploymentManager()
+    record = manager.get_deployment_record(run_id)
+    if not record:
+        return {"status": "NOT_DEPLOYED", "record": None}
+    return {"status": record.stage.value, "record": record.to_dict()}
+
+@app.post("/api/runs/{run_id}/deploy/retry")
+async def retry_run_deployment(run_id: str, request: DeployRequest = DeployRequest()):
+    return await trigger_run_deployment(run_id, request)
+
 if __name__ == "__main__":
     import uvicorn
     uvicorn.run(app, host="0.0.0.0", port=8000)
